@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Know Your Flights — Methodology</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Public+Sans:ital,wght@0,400;0,500;0,600;0,700;0,800;1,400&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --bg:     #F1F5F9;
+  --card:   #FFFFFF;
+  --border: #E2E8F0;
+  --fg:     #0F172A;
+  --fg-2:   #475569;
+  --fg-3:   #94A3B8;
+  --accent: #F59E0B;
+  --sans:   'Public Sans', sans-serif;
+  --mono:   'DM Mono', monospace;
+  --t:      180ms cubic-bezier(0.4,0,0.2,1);
+}
+
+html { scroll-behavior: smooth; }
+body {
+  background: var(--bg); color: var(--fg);
+  font-family: var(--sans); font-size: 14px; line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+}
+
+nav {
+  position: sticky; top: 0; z-index: 100; height: 52px;
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 0 32px; background: rgba(241,245,249,0.95);
+  backdrop-filter: blur(12px); border-bottom: 1px solid var(--border);
+}
+.nav-logo {
+  font-weight: 700; font-size: 15px; letter-spacing: -0.02em;
+  color: var(--fg); display: flex; align-items: center; gap: 6px;
+  text-decoration: none; white-space: nowrap;
+}
+.nav-left { display: flex; align-items: center; gap: 4px; }
+.nav-links { display: flex; gap: 2px; }
+.nav-links a {
+  font-size: 12px; font-weight: 500; color: var(--fg-2);
+  padding: 5px 10px; text-decoration: none; border-radius: 6px;
+  transition: all var(--t); white-space: nowrap;
+}
+.nav-links a:hover { color: var(--fg); background: rgba(15,23,42,0.05); }
+.nav-links a.active { color: var(--fg); font-weight: 600; }
+
+main {
+  max-width: 640px; margin: 0 auto; padding: 64px 24px 100px;
+}
+
+.page-eyebrow {
+  font-size: 11px; font-weight: 500; letter-spacing: 0.1em;
+  text-transform: uppercase; color: var(--accent); margin-bottom: 14px;
+}
+h1 {
+  font-size: clamp(1.6rem, 4vw, 2.4rem); font-weight: 700;
+  letter-spacing: -0.02em; line-height: 1.2; margin-bottom: 16px;
+}
+.lede {
+  font-size: 15px; line-height: 1.75; color: var(--fg-2);
+  border-bottom: 1px solid var(--border); padding-bottom: 40px; margin-bottom: 40px;
+}
+
+.method-section { display: flex; flex-direction: column; gap: 32px; }
+.method-block {}
+.method-block h2 {
+  font-size: 11px; font-weight: 600; letter-spacing: 0.08em;
+  text-transform: uppercase; color: var(--fg-3); margin-bottom: 10px;
+}
+.method-block p {
+  font-size: 14px; color: var(--fg-2); line-height: 1.8; margin-bottom: 10px;
+}
+.method-block p:last-child { margin-bottom: 0; }
+.method-block a {
+  color: var(--fg); border-bottom: 1.5px solid var(--accent);
+  text-decoration: none; transition: color var(--t);
+}
+.method-block a:hover { color: var(--accent); }
+.method-note {
+  font-size: 12px; color: var(--fg-3); line-height: 1.7;
+  border-top: 1px solid var(--border); padding-top: 32px; margin-top: 8px;
+}
+</style>
+</head>
+<body>
+
+<nav>
+  <div class="nav-left">
+    <a class="nav-logo" href="story.html"><img src="img/kyf-logo.svg" alt="KYF" height="22" style="display:block"></a>
+    <div class="nav-links">
+      <a href="search.html">Search Route</a>
+      <a href="index.html">Explore Data</a>
+    </div>
+  </div>
+  <div class="nav-links">
+    <a href="story.html">About</a>
+    <a href="methodology.html" class="active">Methodology</a>
+    <a href="contact.html">Contact</a>
+  </div>
+</nav>
+
+<main>
+
+<p class="page-eyebrow">How it works</p>
+<h1>Methodology</h1>
+<div class="method-section">
+
+  <div class="method-block">
+    <h2>Data source</h2>
+    <p>All data comes from the <a href="https://www.transtats.bts.gov/DL_SelectFields.asp?gnoyr_VQ=FGK&QO_fu146_anzr=b0-gvzr" target="_blank" rel="noopener">BTS Marketing Carrier On-Time Performance</a> dataset, published monthly by the U.S. Bureau of Transportation Statistics. It covers US domestic scheduled passenger service from January 2018 through April 2026 — approximately 70 million non-cancelled departures across 395 airports.</p>
+    <p><a href="https://www.transtats.bts.gov/DL_SelectFields.asp?gnoyr_VQ=FGK&QO_fu146_anzr=b0-gvzr" target="_blank" rel="noopener">View the dataset →</a> &nbsp; <a href="https://transtats.bts.gov/PREZIP/On_Time_Marketing_Carrier_On_Time_Performance_Beginning_January_2018.zip" target="_blank" rel="noopener">Download the full archive →</a></p>
+  </div>
+
+  <div class="method-block">
+    <h2>Why 2018</h2>
+    <p>BTS switched to the Marketing Carrier format in January 2018, which attributes each flight to the carrier that sold the ticket rather than the one that operated it. Records before 2018 use a different schema and aren't directly comparable.</p>
+  </div>
+
+  <div class="method-block">
+    <h2>Cancelled and diverted flights</h2>
+    <p>Cancelled flights are excluded from all delay metrics — they represent a separate outcome and would otherwise distort average delay figures. Diverted flights are excluded from arrival delay calculations because they never reach the destination airport; they may appear in departure figures if a departure time was recorded.</p>
+  </div>
+
+  <div class="method-block">
+    <h2>What counts as a delay</h2>
+    <p>BTS officially counts a flight as on-time if it arrives within 15 minutes of schedule. KYF uses a stricter three-tier breakdown:</p>
+    <p>On-time or early: within 5 minutes of schedule. Minor delay: 5–15 minutes late. Disruptive delay: more than 15 minutes late.</p>
+    <p>Average delay figures include all non-cancelled flights, not just delayed ones. Early arrivals have negative delay values; on-time arrivals are near zero. This produces a more realistic picture of a typical passenger's experience than averaging only the late flights.</p>
+  </div>
+
+  <div class="method-block">
+    <h2>Delay rate</h2>
+    <p>Delay rate = flights arriving (or departing) 15 or more minutes late, divided by total non-cancelled flights. The map uses departure delay rate. Route pages use arrival delay rate, which more directly reflects the end-to-end travel experience.</p>
+  </div>
+
+  <div class="method-block">
+    <h2>Carrier performance</h2>
+    <p>Each carrier on a route is ranked by average arrival delay across all their non-cancelled flights on that leg. The count shown is total flights operated, not seats sold. Per-carrier annual breakdowns require at least 30 flights in that year to be shown, to avoid unreliable averages from very thin samples.</p>
+  </div>
+
+  <div class="method-block">
+    <h2>Time-of-day and seasonal patterns</h2>
+    <p>The polar chart shows the percentage of flights delayed 15 or more minutes, broken out by month and by day of week. Values are computed from all non-cancelled flights in the selected year range that fall within each month-day combination. Hovering a month segment reveals the day-of-week breakdown for that month.</p>
+  </div>
+
+  <div class="method-block">
+    <h2>Which routes are included</h2>
+    <p>Any route with at least one recorded flight appears on the map. Annual breakdowns on route pages require at least 50 flights in a given year to be shown, to keep per-year averages statistically meaningful.</p>
+  </div>
+
+  <div class="method-block">
+    <h2>Year range selection</h2>
+    <p>When you filter by year range, all statistics are recalculated using only flights within those years. Years are weighted by flight count, so busier years have proportionally more influence on combined averages.</p>
+  </div>
+
+  <div class="method-block">
+    <h2>2020 and 2021</h2>
+    <p>COVID-19 cut US air traffic by roughly 60% in 2020 and 40% in 2021. Delay rates fell not because operations improved but because reduced congestion meant fewer cascading delays. These years are included but worth filtering out for a pre-pandemic baseline.</p>
+  </div>
+
+  <div class="method-block">
+    <h2>2026 partial year</h2>
+    <p>BTS publishes data with a two-to-three month lag. The last available month at the time of the most recent build was April 2026, so 2026 covers only January through April and is not comparable to a full year.</p>
+  </div>
+
+  <div class="method-block">
+    <h2>Pipeline</h2>
+    <p>Raw BTS monthly CSV files are converted to Parquet and partitioned by year and month. Aggregations are computed from those files using DuckDB. Two build passes run over the data: the first produces map data (airport and route summaries, broken out by year); the second builds one JSON file per route containing all the breakdowns shown on route pages. The site is fully static — no computation happens at request time. Year-range filtering recalculates weighted averages from per-year fields pre-embedded in each JSON file.</p>
+  </div>
+
+  <p class="method-note">Questions about the methodology? <a href="contact.html">Get in touch.</a></p>
+
+</div>
+
+</main>
+
+</body>
+</html>

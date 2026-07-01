@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Know Your Flights — Contact</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Public+Sans:ital,wght@0,400;0,500;0,600;0,700;0,800;1,400&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --bg:     #F1F5F9;
+  --card:   #FFFFFF;
+  --border: #E2E8F0;
+  --fg:     #0F172A;
+  --fg-2:   #475569;
+  --fg-3:   #94A3B8;
+  --accent: #F59E0B;
+  --sans:   'Public Sans', sans-serif;
+  --mono:   'DM Mono', monospace;
+  --t:      180ms cubic-bezier(0.4,0,0.2,1);
+}
+
+html { scroll-behavior: smooth; }
+body {
+  background: var(--bg); color: var(--fg);
+  font-family: var(--sans); font-size: 14px; line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+}
+
+nav {
+  position: sticky; top: 0; z-index: 100; height: 52px;
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 0 32px; background: rgba(241,245,249,0.95);
+  backdrop-filter: blur(12px); border-bottom: 1px solid var(--border);
+}
+.nav-logo {
+  font-weight: 700; font-size: 15px; letter-spacing: -0.02em;
+  color: var(--fg); display: flex; align-items: center; gap: 6px;
+  text-decoration: none; white-space: nowrap;
+}
+.logo-blob {
+  display: inline-block; width: 20px; height: 20px; border-radius: 50%;
+  background: #94A3B8; flex-shrink: 0; vertical-align: middle;
+}
+.nav-left { display: flex; align-items: center; gap: 4px; }
+.nav-links { display: flex; gap: 2px; }
+.nav-links a {
+  font-size: 12px; font-weight: 500; color: var(--fg-2);
+  padding: 5px 10px; text-decoration: none; border-radius: 6px;
+  transition: all var(--t); white-space: nowrap;
+}
+.nav-links a:hover { color: var(--fg); background: rgba(15,23,42,0.05); }
+.nav-links a.active { color: var(--fg); font-weight: 600; }
+
+main {
+  max-width: 600px; margin: 0 auto; padding: 80px 24px 120px;
+}
+
+.page-eyebrow {
+  font-size: 11px; font-weight: 500; letter-spacing: 0.1em;
+  text-transform: uppercase; color: var(--accent); margin-bottom: 14px;
+}
+h1 {
+  font-size: clamp(1.8rem, 4vw, 2.6rem); font-weight: 800;
+  letter-spacing: -0.03em; line-height: 1.15; margin-bottom: 20px;
+}
+.lede {
+  font-size: 1rem; color: var(--fg-2); line-height: 1.7; margin-bottom: 56px;
+  border-bottom: 1px solid var(--border); padding-bottom: 40px;
+}
+
+.contact-block { margin-bottom: 40px; }
+.contact-label {
+  font-size: 10px; font-weight: 600; letter-spacing: 0.1em;
+  text-transform: uppercase; color: var(--fg-3); margin-bottom: 8px;
+}
+.contact-value {
+  font-size: 1.05rem; font-weight: 600; color: var(--fg);
+}
+.contact-value a {
+  color: var(--fg); text-decoration: none; border-bottom: 1.5px solid var(--accent);
+  transition: color var(--t);
+}
+.contact-value a:hover { color: var(--accent); }
+
+.about-block {
+  margin-top: 56px; padding-top: 40px; border-top: 1px solid var(--border);
+  font-size: 13px; color: var(--fg-2); line-height: 1.75;
+}
+.about-block a { color: var(--fg); border-bottom: 1px solid var(--border); text-decoration: none; }
+.about-block a:hover { border-color: var(--accent); color: var(--accent); }
+
+.method-section { margin-top: 56px; padding-top: 40px; border-top: 1px solid var(--border); }
+.method-section h2 {
+  font-size: 13px; font-weight: 700; color: var(--fg);
+  letter-spacing: -0.01em; margin-bottom: 16px;
+}
+.method-section h3 {
+  font-size: 11px; font-weight: 600; letter-spacing: 0.08em;
+  text-transform: uppercase; color: var(--fg-3); margin: 20px 0 8px;
+}
+.method-section p {
+  font-size: 13px; color: var(--fg-2); line-height: 1.75; margin-bottom: 10px;
+}
+.method-section p:last-child { margin-bottom: 0; }
+.method-section a { color: var(--fg); border-bottom: 1px solid var(--border); text-decoration: none; }
+.method-section a:hover { border-color: var(--accent); color: var(--accent); }
+.method-note { font-size: 12px; color: var(--fg-3); line-height: 1.7; }
+</style>
+</head>
+<body>
+
+<nav>
+  <div class="nav-left">
+    <a class="nav-logo" href="story.html"><img src="img/kyf-logo.svg" alt="KYF" height="22" style="display:block"></a>
+    <div class="nav-links">
+      <a href="search.html">Search Route</a>
+      <a href="index.html">Explore Data</a>
+    </div>
+  </div>
+  <div class="nav-links">
+    <a href="story.html">About</a>
+    <a href="methodology.html">Methodology</a>
+    <a href="contact.html" class="active">Contact</a>
+  </div>
+</nav>
+
+<main>
+
+  <p class="page-eyebrow">Get in touch</p>
+  <h1>Contact</h1>
+  <p class="lede">Know Your Flights is a data visualization project built by Etoile Boots on public Bureau of Transportation Statistics records.</p>
+
+  <div class="contact-block">
+    <p class="contact-label">Email</p>
+    <p class="contact-value"><a href="mailto:tanakawren@gmail.com">tanakawren@gmail.com</a></p>
+  </div>
+
+  <div class="contact-block">
+    <p class="contact-label">LinkedIn</p>
+    <p class="contact-value"><a href="https://www.linkedin.com/in/etoile-tanaka-boots/" target="_blank" rel="noopener">Etoile Tanaka Boots</a></p>
+  </div>
+
+  <div class="about-block">
+    <p>For details on how the data is sourced, processed, and how all metrics are defined, see the <a href="methodology.html">Methodology page</a>.</p>
+  </div>
+
+</main>
+
+</body>
+</html>

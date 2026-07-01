@@ -1,0 +1,197 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Know Your Flights — Route &amp; Flight Search</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Public+Sans:ital,wght@0,400;0,500;0,600;0,700;1,400&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/search.css">
+</head>
+<body>
+
+<nav>
+  <div class="nav-left">
+    <a class="nav-logo" href="story.html">
+      <img src="img/kyf-logo.svg" alt="KYF" height="22" style="display:block">
+    </a>
+    <div class="nav-links">
+      <a class="active" href="search.html">Search Route</a>
+      <a href="index.html">Explore Data</a>
+    </div>
+  </div>
+  <div class="nav-links">
+    <a href="story.html">About</a>
+    <a href="methodology.html">Methodology</a>
+    <a href="contact.html">Contact</a>
+  </div>
+</nav>
+
+<main>
+
+<!-- ══ TIER 1: Route Passport ════════════════════════════════ -->
+<section>
+  <div class="route-search-bar">
+    <div class="route-inputs">
+      <div class="route-input-group" id="from-group">
+        <span class="route-input-label">Origin</span>
+        <input class="route-code-input" id="from-input" type="text" maxlength="30" placeholder="JFK" autocomplete="off" spellcheck="false">
+        <div class="ac-dropdown" id="from-dropdown" style="display:none"></div>
+      </div>
+      <span class="route-sep"><svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M3 8h10M9 4l4 4-4 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+      <div class="route-input-group" id="to-group">
+        <span class="route-input-label">Destination</span>
+        <input class="route-code-input" id="to-input" type="text" maxlength="30" placeholder="LAX" autocomplete="off" spellcheck="false">
+        <div class="ac-dropdown" id="to-dropdown" style="display:none"></div>
+      </div>
+      <button class="route-swap-btn" onclick="swapRoute()" title="Swap origin and destination">⇄</button>
+    </div>
+    <button class="route-lookup-btn" id="lookup-btn" onclick="doLookup()">Look up →</button>
+  </div>
+
+  <!-- Compact year filter — shown below search bar, before results -->
+  <div class="yr-inline-wrap" id="year-controller" style="display:none">
+    <span class="yr-inline-label">Years</span>
+    <div class="yr-slider-wrap">
+      <div class="yr-slider-track"></div>
+      <div class="yr-slider-fill" id="yr-fill" style="left:0%;width:100%"></div>
+      <input type="range" class="yr-range" id="yr-start" min="2018" max="2026" value="2018" step="1">
+      <input type="range" class="yr-range" id="yr-end"   min="2018" max="2026" value="2026" step="1">
+    </div>
+    <span class="yr-inline-range" id="yr-selected-label">2018–2026 (partial)</span>
+  </div>
+
+  <h1 class="route-title" id="route-title">JFK → LAX Historical Route Performance</h1>
+
+  <div id="blank-prompt" style="display:none;text-align:center;padding:60px 24px 40px;color:var(--color-text-muted)">
+    <div style="font-size:36px;margin-bottom:14px;opacity:0.25">✈</div>
+    <div style="font-size:16px;font-weight:600;color:var(--color-text-main);margin-bottom:6px">Enter a route to see its history</div>
+
+  </div>
+
+  <p class="route-scope" id="route-scope">BTS On-Time Data · 2018–2025 · Loading…</p>
+  <p class="route-legal" id="route-legal">Historical archive context only. Past performance does not guarantee future airline schedules, airport capacities, or weather events.</p>
+
+  <div class="route-kpi" id="route-kpi">
+    <div class="route-kpi-cell" id="kpi-cell-days">
+      <div class="route-kpi-label">Lowest delays on</div>
+      <div class="route-kpi-val route-kpi-val--name" id="kpi-day-diff">—</div>
+      <div class="route-kpi-hint" id="kpi-day-hint"></div>
+    </div>
+    <div class="route-kpi-cell" id="kpi-cell-carrier">
+      <div class="route-kpi-label">Most punctual airline</div>
+      <div class="route-kpi-val route-kpi-val--name" id="kpi-carrier-diff">—</div>
+      <div class="route-kpi-hint" id="kpi-carrier-hint"></div>
+    </div>
+    <div class="route-kpi-cell" id="kpi-cell-avg">
+      <div class="route-kpi-label">Average arrival delay</div>
+      <div class="route-kpi-val" id="kpi-avgdelay">—</div>
+      <div class="route-kpi-hint">All flights including on-time</div>
+    </div>
+  </div>
+
+</section>
+
+<!-- ══ TIER 2: Accuracy Funnel ═══════════════════════════════ -->
+<section class="section">
+  <div class="section-title" id="acc-tier-title">Flight Timeliness</div>
+  <div class="section-sub" id="acc-tier-sub">All carriers combined</div>
+  <div class="acc-layout">
+    <div class="acc-bars">
+      <div class="acc-row">
+        <div class="acc-row-label">DEPARTURES</div>
+        <div class="acc-bar" id="dep-bar"></div>
+      </div>
+      <div class="acc-row">
+        <div class="acc-row-label">ARRIVALS</div>
+        <div class="acc-bar" id="arr-bar"></div>
+      </div>
+    </div>
+    <div class="acc-legend">
+      <div class="acc-legend-item"><span class="acc-legend-swatch" style="background:#E2E8F0;border:1px solid #CBD5E1"></span>On-Time / Early (≤5 min)</div>
+      <div class="acc-legend-item"><span class="acc-legend-swatch" style="background:#FEF3C7;border:1px solid #FDE68A"></span>Minor Delay (5–15 min)</div>
+      <div class="acc-legend-item"><span class="acc-legend-swatch" style="background:#EF4444"></span>Disruptive Delay (≥15 min)</div>
+    </div>
+  </div>
+  <p id="acc-tier-caption" style="font-size:13px;color:var(--color-text-muted);line-height:1.6;margin-top:16px;max-width:640px"></p>
+</section>
+
+<!-- ══ TIER 3: Polar Delay Chart ══════════════════════════════ -->
+<section class="section">
+  <div class="section-title">Time-Dependent Flight Delay Variation</div>
+  <div class="section-sub">View monthly and weekly average percentages of flights delayed over 15 minutes by hovering. Select a month to view more granular details.</div>
+  <div class="polar-toggle" style="margin-bottom:16px">
+    <button class="ptog-btn active" id="ptog-dep" onclick="setPolarMode('dep')">Departure</button>
+    <button class="ptog-btn" id="ptog-arr" onclick="setPolarMode('arr')">Arrival</button>
+  </div>
+  <div id="polar-main" class="polar-main">
+    <div style="display:grid;grid-template-columns:minmax(260px,460px) minmax(160px,210px);gap:16px;align-items:center">
+      <svg id="polar-svg" viewBox="-220 -220 440 440" style="width:100%;display:block;overflow:visible"></svg>
+      <div id="polar-info" style="background:var(--color-bg-canvas);border:1px solid var(--color-border);border-radius:8px;padding:12px 14px;font-family:'Public Sans',sans-serif;font-size:11px;min-height:120px;align-self:center">
+        <span id="polar-info-idle" style="color:var(--color-text-faint);line-height:1.6;font-size:11px">Hover a month<br>to begin exploring</span>
+      </div>
+    </div>
+    <div class="polar-footer">
+      <div style="margin-bottom:10px">
+        <div style="font-size:10px;font-weight:600;letter-spacing:0.06em;text-transform:uppercase;color:var(--color-text-faint);margin-bottom:5px">% flights delayed ≥15 min</div>
+        <div style="display:flex;align-items:center;gap:8px">
+          <span style="font-size:10px;font-family:'DM Mono',monospace;color:var(--color-text-faint)">0%</span>
+          <div style="flex:1;position:relative">
+            <div style="height:8px;border-radius:4px;background:linear-gradient(to right,#22C55E,#EAB308,#EF4444)"></div>
+            <div style="display:flex;justify-content:space-between;margin-top:3px">
+              <span style="font-size:9px;font-family:'DM Mono',monospace;color:var(--color-text-faint)">low</span>
+              <span style="font-size:9px;font-family:'DM Mono',monospace;color:var(--color-text-faint)">15%</span>
+              <span style="font-size:9px;font-family:'DM Mono',monospace;color:var(--color-text-faint)">22%</span>
+              <span style="font-size:9px;font-family:'DM Mono',monospace;color:var(--color-text-faint)">high</span>
+            </div>
+          </div>
+          <span style="font-size:10px;font-family:'DM Mono',monospace;color:var(--color-text-faint)">30%+</span>
+        </div>
+      </div>
+      <div class="polar-data-note" id="polar-data-note">Route-specific · % of flights delayed ≥15 min · hover to explore</div>
+    </div>
+  </div>
+</section>
+
+<!-- ══ TIER 4: Carrier Leaderboard ═══════════════════════════ -->
+<section class="section" id="carrier-card">
+  <div class="section-title">Carrier Performance Comparison</div>
+  <div class="section-sub" id="carrier-sub">Ranked by total flights operated · delays averaged across all flights, including on-time and early arrivals</div>
+  <div style="display:flex;gap:16px;flex-wrap:wrap;margin:8px 0 10px;font-size:10px;font-family:'Public Sans',sans-serif;color:var(--color-text-muted)">
+    <span style="font-weight:700;text-transform:uppercase;letter-spacing:0.06em;color:var(--color-text-faint)">Delay color</span>
+    <span><span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:#94A3B8;margin-right:4px;vertical-align:middle"></span>On time (≤+2 min)</span>
+    <span><span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:#FB923C;margin-right:4px;vertical-align:middle"></span>Moderate (+2–10 min)</span>
+    <span><span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:#EA580C;margin-right:4px;vertical-align:middle"></span>High delay (&gt;+10 min)</span>
+  </div>
+  <table class="carrier-table">
+    <thead>
+      <tr>
+        <th>Airline</th>
+        <th>Flights Operated</th>
+        <th style="color:#475569">Avg Departure Delay</th>
+        <th style="color:#0F172A">Avg Arrival Delay</th>
+      </tr>
+    </thead>
+    <tbody id="carrier-tbody"></tbody>
+  </table>
+</section>
+
+<!-- ══ TIER 5: Year-by-Year Macro Chart ══════════════════════ -->
+<section class="section">
+  <div class="section-title">Delays over the Years</div>
+  <div class="section-sub" id="tier5-sub">Average departure delay in minutes</div>
+  <div class="polar-toggle" style="margin-bottom:16px">
+    <button class="ptog-btn active" id="mtog-dep" onclick="setMacroMode('dep')">Departure</button>
+    <button class="ptog-btn" id="mtog-arr" onclick="setMacroMode('arr')">Arrival</button>
+  </div>
+  <p class="tier5-hint" id="tier5-hint">Click a carrier in the leaderboard above to overlay their specific performance track.</p>
+  <svg class="macro-svg" id="macro-svg" viewBox="0 0 900 220"></svg>
+  <div class="ribbon-wrap" id="ribbon-wrap"></div>
+</section>
+
+</main>
+
+<script src="js/search.js?v=2"></script>
+</body>
+</html>

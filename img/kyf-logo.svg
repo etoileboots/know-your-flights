@@ -1,0 +1,29 @@
+<svg viewBox="0 0 120 46" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <filter id="glow" x="-50%" y="-50%" width="200%" height="200%">
+      <feGaussianBlur stdDeviation="1.2" result="blur"/>
+      <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
+    </filter>
+  </defs>
+  <rect width="120" height="46" rx="7" fill="#0D0D0D"/>
+  <g fill="#F59E0B" filter="url(#glow)">
+    <!-- K -->
+    <circle cx="11" cy="11" r="2.2"/><circle cx="29" cy="11" r="2.2"/>
+    <circle cx="11" cy="17" r="2.2"/><circle cx="23" cy="17" r="2.2"/>
+    <circle cx="11" cy="23" r="2.2"/><circle cx="17" cy="23" r="2.2"/>
+    <circle cx="11" cy="29" r="2.2"/><circle cx="23" cy="29" r="2.2"/>
+    <circle cx="11" cy="35" r="2.2"/><circle cx="29" cy="35" r="2.2"/>
+    <!-- Y -->
+    <circle cx="48" cy="11" r="2.2"/><circle cx="72" cy="11" r="2.2"/>
+    <circle cx="54" cy="17" r="2.2"/><circle cx="66" cy="17" r="2.2"/>
+    <circle cx="60" cy="23" r="2.2"/>
+    <circle cx="60" cy="29" r="2.2"/>
+    <circle cx="60" cy="35" r="2.2"/>
+    <!-- F -->
+    <circle cx="85" cy="11" r="2.2"/><circle cx="91" cy="11" r="2.2"/><circle cx="97" cy="11" r="2.2"/><circle cx="103" cy="11" r="2.2"/>
+    <circle cx="85" cy="17" r="2.2"/>
+    <circle cx="85" cy="23" r="2.2"/><circle cx="91" cy="23" r="2.2"/><circle cx="97" cy="23" r="2.2"/>
+    <circle cx="85" cy="29" r="2.2"/>
+    <circle cx="85" cy="35" r="2.2"/>
+  </g>
+</svg>

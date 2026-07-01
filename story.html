@@ -1,0 +1,302 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Know Your Flights — About</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Public+Sans:ital,wght@0,400;0,500;0,600;0,700;0,800;1,400&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --bg:        #F1F5F9;
+  --card:      #FFFFFF;
+  --border:    #E2E8F0;
+  --fg:        #0F172A;
+  --fg-2:      #475569;
+  --fg-3:      #94A3B8;
+  --accent:    #F59E0B;
+  --warn:      #C2410C;
+  --green:     #10B981;
+  --sans:      'Public Sans', sans-serif;
+  --mono:      'DM Mono', monospace;
+  --t:         180ms cubic-bezier(0.4,0,0.2,1);
+}
+
+html { scroll-behavior: smooth; }
+body {
+  background: var(--bg); color: var(--fg);
+  font-family: var(--sans); font-size: 14px; line-height: 1.6;
+  font-weight: 400; -webkit-font-smoothing: antialiased;
+}
+
+nav {
+  position: sticky; top: 0; z-index: 100; height: 52px;
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 0 32px; background: rgba(241,245,249,0.95);
+  backdrop-filter: blur(12px); border-bottom: 1px solid var(--border);
+}
+.logo-blob { display: inline-block; width: 20px; height: 20px; border-radius: 50%; background: #94A3B8; flex-shrink: 0; }
+.nav-left { display: flex; align-items: center; gap: 4px; }
+.nav-logo {
+  font-weight: 700; font-size: 15px; letter-spacing: -0.02em;
+  color: var(--fg); display: flex; align-items: center; gap: 6px;
+  text-decoration: none; white-space: nowrap;
+}
+.nav-links { display: flex; gap: 2px; }
+.nav-links a {
+  font-size: 12px; font-weight: 500; color: var(--fg-2);
+  padding: 5px 10px; text-decoration: none; border-radius: 6px;
+  transition: all var(--t); white-space: nowrap;
+}
+.nav-links a:hover { color: var(--fg); background: rgba(15,23,42,0.05); }
+.nav-links a.active { color: var(--fg); font-weight: 600; }
+
+main { max-width: 740px; margin: 0 auto; padding: 64px 24px 100px; }
+
+/* ── Intro ───────────────────────────────────────────────── */
+.intro { margin-bottom: 52px; border-bottom: 1px solid var(--border); padding-bottom: 40px; }
+.eyebrow {
+  font-size: 11px; font-weight: 500; letter-spacing: 0.1em;
+  text-transform: uppercase; color: var(--accent); margin-bottom: 14px;
+}
+h1 {
+  font-size: clamp(1.6rem, 4vw, 2.4rem); font-weight: 700;
+  letter-spacing: -0.02em; line-height: 1.2; margin-bottom: 16px;
+}
+.lede {
+  font-size: 15px; line-height: 1.75; color: var(--fg-2);
+}
+.lede + .lede { margin-top: 12px; }
+
+/* ── Stats ───────────────────────────────────────────────── */
+.stat-row {
+  display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px;
+  margin: 0 0 52px;
+}
+@media (max-width: 560px) { .stat-row { grid-template-columns: 1fr 1fr; } }
+.stat-card {
+  background: var(--card); border: 1px solid var(--border);
+  border-radius: 10px; padding: 18px 16px;
+}
+.stat-card-label {
+  font-size: 10px; font-weight: 500; letter-spacing: 0.08em;
+  text-transform: uppercase; color: var(--fg-3); margin-bottom: 8px;
+}
+.stat-card-val {
+  font-family: var(--mono); font-size: 24px; font-weight: 500;
+  color: var(--fg); margin-bottom: 4px; line-height: 1.1;
+}
+.stat-card-sub { font-size: 12px; color: var(--fg-2); line-height: 1.5; }
+
+/* ── Section header ──────────────────────────────────────── */
+.section-header { margin-bottom: 24px; }
+.section-eyebrow {
+  font-size: 10px; font-weight: 600; letter-spacing: 0.1em;
+  text-transform: uppercase; color: var(--fg-3); margin-bottom: 8px;
+}
+h2 {
+  font-size: 1.15rem; font-weight: 700; letter-spacing: -0.01em;
+  margin-bottom: 6px;
+}
+.section-sub { font-size: 13px; color: var(--fg-2); line-height: 1.6; }
+
+/* ── Tool cards ──────────────────────────────────────────── */
+.tool-grid {
+  display: grid; grid-template-columns: 1fr 1fr; gap: 16px;
+  margin-bottom: 52px;
+}
+@media (max-width: 600px) { .tool-grid { grid-template-columns: 1fr; } }
+.tool-card {
+  background: var(--card); border: 1px solid var(--border);
+  border-radius: 12px; padding: 24px; display: flex; flex-direction: column;
+  gap: 16px;
+}
+.tool-card-head {
+  display: flex; align-items: flex-start; justify-content: space-between; gap: 12px;
+}
+.tool-name {
+  font-size: 14px; font-weight: 700; color: var(--fg); letter-spacing: -0.01em;
+}
+.tool-badge {
+  font-size: 9px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase;
+  padding: 3px 8px; border-radius: 20px; flex-shrink: 0; margin-top: 2px;
+}
+.tool-badge-map    { background: #DBEAFE; color: #1D4ED8; }
+.tool-badge-search { background: #FEF3C7; color: #92400E; }
+.tool-desc {
+  font-size: 13px; color: var(--fg-2); line-height: 1.7;
+}
+.tool-features {
+  list-style: none; display: flex; flex-direction: column; gap: 7px;
+}
+.tool-features li {
+  display: flex; align-items: flex-start; gap: 8px;
+  font-size: 12px; color: var(--fg-2); line-height: 1.5;
+}
+.tool-features li::before {
+  content: ''; display: inline-block; width: 6px; height: 6px;
+  border-radius: 50%; background: var(--border);
+  flex-shrink: 0; margin-top: 5px;
+}
+.tool-link {
+  display: inline-flex; align-items: center; gap: 6px;
+  font-size: 12px; font-weight: 600; color: var(--fg);
+  padding: 8px 14px; background: var(--bg); border: 1px solid var(--border);
+  border-radius: 7px; text-decoration: none; transition: all var(--t);
+  margin-top: auto; align-self: flex-start;
+}
+.tool-link:hover { background: var(--fg); color: #fff; border-color: var(--fg); }
+
+/* ── How to read delay rate ──────────────────────────────── */
+.delay-scale {
+  background: var(--card); border: 1px solid var(--border);
+  border-radius: 10px; padding: 20px 20px 16px; margin-bottom: 52px;
+}
+.delay-scale-title {
+  font-size: 11px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase;
+  color: var(--fg-3); margin-bottom: 14px;
+}
+.delay-scale-bar {
+  height: 10px; border-radius: 5px; margin-bottom: 10px;
+  background: linear-gradient(to right, #10B981 0%, #FCD34D 40%, #F59E0B 65%, #C2410C 100%);
+}
+.delay-scale-labels {
+  display: flex; justify-content: space-between;
+  font-size: 11px; color: var(--fg-3); margin-bottom: 14px;
+}
+.delay-scale-tiers {
+  display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px;
+}
+@media (max-width: 560px) { .delay-scale-tiers { grid-template-columns: 1fr 1fr; } }
+.delay-tier {
+  padding: 8px 10px; border-radius: 6px;
+  font-size: 11px; line-height: 1.5;
+}
+.delay-tier strong { display: block; font-size: 12px; margin-bottom: 2px; }
+.delay-tier-green  { background: #D1FAE5; color: #065F46; }
+.delay-tier-yellow { background: #FEF3C7; color: #92400E; }
+.delay-tier-amber  { background: #FDE68A; color: #78350F; }
+.delay-tier-red    { background: #FEE2E2; color: #991B1B; }
+
+/* ── FAQ / tips ──────────────────────────────────────────── */
+.tips { margin-bottom: 52px; display: flex; flex-direction: column; gap: 1px; }
+.tip {
+  background: var(--card); border: 1px solid var(--border);
+  padding: 16px 18px; font-size: 13px; color: var(--fg-2); line-height: 1.65;
+}
+.tip:first-child { border-radius: 10px 10px 0 0; }
+.tip:last-child  { border-radius: 0 0 10px 10px; }
+.tip strong { color: var(--fg); display: block; margin-bottom: 3px; font-size: 13px; }
+
+/* ── Source block ────────────────────────────────────────── */
+.source-block {
+  padding: 24px; background: var(--card);
+  border: 1px solid var(--border); border-radius: 10px; margin-bottom: 24px;
+}
+.source-heading {
+  font-size: 10px; font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase;
+  color: var(--fg-3); margin-bottom: 10px;
+}
+.source-body { font-size: 13px; color: var(--fg-2); line-height: 1.75; }
+.source-body a {
+  color: var(--fg); border-bottom: 1.5px solid var(--accent);
+  text-decoration: none; transition: color var(--t);
+}
+.source-body a:hover { color: var(--accent); }
+
+.methodology {
+  font-size: 12px; color: var(--fg-3); line-height: 1.7;
+  border-top: 1px solid var(--border); padding-top: 24px; margin-top: 12px;
+}
+
+/* ── Prose sections ──────────────────────────────────────── */
+.prose-section { margin: 48px 0; }
+.prose-section h2 {
+  font-size: 1rem; font-weight: 700; letter-spacing: -0.01em;
+  margin-bottom: 16px; color: var(--fg);
+}
+.prose-section p {
+  font-size: 14px; color: var(--fg-2); line-height: 1.8; margin-bottom: 12px;
+}
+.prose-section p:last-child { margin-bottom: 0; }
+.prose-section p strong { color: var(--fg); }
+.prose-section a { color: var(--fg); border-bottom: 1.5px solid var(--accent); text-decoration: none; }
+.prose-section a:hover { color: var(--accent); }
+p.note { font-size: 12px; color: var(--fg-3); line-height: 1.7; }
+
+/* ── CTA ─────────────────────────────────────────────────── */
+.cta-strip {
+  display: flex; gap: 12px; margin-top: 48px; flex-wrap: wrap;
+}
+.cta-btn {
+  display: inline-flex; align-items: center; gap: 7px;
+  font-size: 13px; font-weight: 600; text-decoration: none;
+  padding: 11px 20px; border-radius: 8px; transition: all var(--t);
+}
+.cta-btn-primary {
+  background: var(--accent); color: var(--fg);
+}
+.cta-btn-primary:hover { background: #D97706; }
+.cta-btn-secondary {
+  background: var(--card); color: var(--fg); border: 1px solid var(--border);
+}
+.cta-btn-secondary:hover { background: var(--fg); color: #fff; border-color: var(--fg); }
+</style>
+</head>
+<body>
+
+<nav>
+  <div class="nav-left">
+    <a class="nav-logo" href="story.html"><img src="img/kyf-logo.svg" alt="KYF" height="22" style="display:block"></a>
+    <div class="nav-links">
+      <a href="search.html">Search Route</a>
+      <a href="index.html">Explore Data</a>
+    </div>
+  </div>
+  <div class="nav-links">
+    <a href="story.html" class="active">About</a>
+    <a href="methodology.html">Methodology</a>
+    <a href="contact.html">Contact</a>
+  </div>
+</nav>
+
+<main>
+
+<p class="eyebrow">BTS On-Time Data · January 2018–April 2026</p>
+<h1>About</h1>
+<h2>Introduction to Know Your Flights</h2>
+<p class="lede">When you're shopping for a flight, you're shown a price, a departure time, and a carrier. What's rarely shown is the history behind that route: how often it runs late, how time of day affects performance, which carriers do better on that specific leg, and what causes the delays. That information exists in public federal records. If you knew that SFO to JFK on a Wednesday morning was historically far more reliable than an evening departure, would you change your itinerary?</p>
+
+<p class="lede">Know Your Flights draws from 70 million domestic departures logged by the Bureau of Transportation Statistics between January 2018 and April 2026, across 395 US airports.</p>
+
+<div class="prose-section">
+  <h2>How to use KYF</h2>
+  <p><em>Search a route.</em> Enter an origin and destination, pick a year range, and hit search. You'll see timeliness breakdowns, seasonal and day-of-week delay patterns, carrier comparisons, and year-over-year trends.</p>
+  <p><em>Explore the map.</em> Airports are colored by average departure delay rate and sized by annual flight volume. Click an airport to see its outbound routes. Click a route to open its full history.</p>
+</div>
+
+<div class="cta-strip">
+  <a href="search.html" class="cta-btn cta-btn-primary">Search a route →</a>
+  <a href="index.html" class="cta-btn cta-btn-secondary">Explore the map</a>
+</div>
+
+<div class="prose-section">
+  <h2>Data Source</h2>
+  <p>All data comes from the <a href="https://www.transtats.bts.gov/DL_SelectFields.asp?gnoyr_VQ=FGK&QO_fu146_anzr=b0-gvzr" target="_blank" rel="noopener">BTS Marketing Carrier On-Time Performance</a> dataset. The data starts in January 2018, when BTS switched to the Marketing Carrier format, which attributes flights to the carrier that sold the ticket rather than the one that operated it. Earlier records use a different schema and are not included in KYF. Data is released with a 3 month lag, and KYF includes data until April, 2026. Depending on usage of this tool, the author will maintain the data within this site to include most recent data releases.</p>
+  <p><a href="https://www.transtats.bts.gov/DL_SelectFields.asp?gnoyr_VQ=FGK&QO_fu146_anzr=b0-gvzr" target="_blank" rel="noopener">View the dataset →</a> &nbsp; <a href="https://transtats.bts.gov/PREZIP/On_Time_Marketing_Carrier_On_Time_Performance_Beginning_January_2018.zip" target="_blank" rel="noopener">Download the full archive →</a></p>
+
+</div>
+
+<div class="prose-section">
+  <h2>Disclaimers</h2>
+  <p><i>This site serves to explore historical data, not to predict future flight outcomes.</i> It can't tell you what will happen on your specific travel date.</p>
+  <p><em>2020 and 2021 flight patterns are largely impacted by COVID-19.</em> With COVID-19 cutting air traffic, 2020-2021 has significantly less delays.</p>
+</div>
+
+</main>
+
+</body>
+</html>

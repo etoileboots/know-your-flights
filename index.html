@@ -1,0 +1,1312 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Flighty — Explore Flight Delays</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Public+Sans:ital,wght@0,400;0,500;0,600;0,700;1,400&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link href="https://api.mapbox.com/mapbox-gl-js/v3.3.0/mapbox-gl.css" rel="stylesheet">
+<script src="https://api.mapbox.com/mapbox-gl-js/v3.3.0/mapbox-gl.js"></script>
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --color-bg-canvas:   #F1F5F9;
+  --color-bg-card:     #FFFFFF;
+  --color-border:      #E2E8F0;
+  --color-text-main:   #0F172A;
+  --color-text-muted:  #475569;
+  --color-text-faint:  #94A3B8;
+  --color-accent:      #F59E0B;
+  --color-accent-dark: #D97706;
+  --color-on-time:     #10B981;
+  --color-warn:        #C2410C;
+  --color-danger:      #DC2626;
+  --t: 200ms cubic-bezier(0.4,0,0.2,1);
+  --panel-w: 320px;
+}
+
+html, body {
+  height: 100%; font-family: 'Public Sans', sans-serif;
+  font-variant-numeric: tabular-nums; -webkit-font-smoothing: antialiased;
+  color: var(--color-text-main); overflow: hidden;
+  font-size: 13px; line-height: 20px; font-weight: 400;
+}
+
+#map { position: fixed; inset: 0; width: 100%; height: 100%; }
+.mapboxgl-canvas { outline: none; }
+.mapboxgl-ctrl-bottom-right { bottom: 24px !important; right: 20px !important; }
+.mapboxgl-ctrl-group {
+  background: var(--color-bg-card) !important;
+  border: 1px solid var(--color-border) !important;
+  border-radius: 6px !important; box-shadow: 0 1px 3px rgba(15,23,42,.08) !important;
+}
+.mapboxgl-ctrl-group button { border-radius: 5px !important; }
+
+/* ── Top bar ──────────────────────────────────────────────── */
+.topbar {
+  position: fixed; top: 0; left: 0; right: 0; height: 52px; z-index: 200;
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 0 32px;
+  background: var(--color-bg-canvas); border-bottom: 1px solid var(--color-border);
+}
+.topbar-brand {
+  font-size: 15px; font-weight: 700; letter-spacing: -0.02em;
+  color: var(--color-text-main); text-decoration: none;
+  display: flex; align-items: center; gap: 6px; white-space: nowrap;
+}
+.topbar-brand-blob {
+  display: inline-block; width: 20px; height: 20px; border-radius: 50%;
+  background: #94A3B8; flex-shrink: 0;
+}
+.topbar-left { display: flex; align-items: center; gap: 4px; }
+.topbar-nav { display: flex; gap: 2px; }
+.topbar-nav a {
+  font-size: 12px; font-weight: 500; color: var(--color-text-muted);
+  padding: 5px 10px; border-radius: 6px; text-decoration: none;
+  transition: all var(--t); white-space: nowrap;
+}
+.topbar-nav a:hover { color: var(--color-text-main); background: rgba(15,23,42,0.05); }
+.topbar-nav a.active { color: var(--color-text-main); font-weight: 600; }
+
+/* ── Search + Year control strip ──────────────────────────── */
+.ctrl-row {
+  position: fixed; top: 60px; left: 50%; transform: translateX(-50%); z-index: 200;
+  display: flex; flex-direction: column;
+  background: var(--color-bg-card); border: 1px solid var(--color-border);
+  border-radius: 10px; overflow: hidden;
+  box-shadow: 0 2px 12px rgba(15,23,42,.10), 0 1px 3px rgba(15,23,42,.06);
+  width: clamp(380px, 52vw, 560px);
+}
+.ctrl-search-row {
+  display: flex; align-items: center; height: 42px; gap: 0;
+}
+.ctrl-field {
+  flex: 1; display: flex; flex-direction: column; justify-content: center;
+  padding: 0 12px; min-width: 0; position: relative;
+}
+.ctrl-field-label {
+  font-size: 9px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase;
+  color: var(--color-text-faint); line-height: 1; margin-bottom: 2px;
+}
+.ctrl-field input {
+  border: none; outline: none; font-family: 'DM Mono', monospace;
+  font-size: 13px; font-weight: 500; color: var(--color-text-main);
+  background: transparent; padding: 0; width: 100%;
+  letter-spacing: 0.04em;
+}
+.ctrl-field input::placeholder { color: var(--color-text-faint); font-weight: 400; letter-spacing: 0; font-family: 'Public Sans', sans-serif; }
+.ctrl-divider-v { width: 1px; height: 24px; background: var(--color-border); flex-shrink: 0; }
+.ctrl-search-btn {
+  height: 100%; padding: 0 18px; border: none; border-left: 1px solid rgba(245,158,11,0.3);
+  background: #F59E0B; font-family: 'Public Sans', sans-serif;
+  font-size: 12px; font-weight: 600; color: #fff;
+  cursor: pointer; transition: background var(--t); white-space: nowrap; flex-shrink: 0;
+}
+.ctrl-search-btn:hover { background: #D97706; }
+.ctrl-search-error {
+  font-size: 11px; color: #DC2626; padding: 4px 14px 6px;
+  display: none; border-top: 1px solid #FEE2E2; background: #FFF5F5;
+}
+.ctrl-ac-dropdown {
+  position: fixed; z-index: 9999;
+  background: var(--color-bg-card); border: 1px solid var(--color-border);
+  border-radius: 8px; box-shadow: 0 4px 16px rgba(0,0,0,.10);
+  max-height: 280px; overflow-y: auto;
+}
+.ctrl-ac-item {
+  display: flex; align-items: center; gap: 10px;
+  padding: 7px 12px; cursor: pointer; transition: background 120ms;
+  font-size: 12px;
+}
+.ctrl-ac-item:hover, .ctrl-ac-item.ac-active { background: var(--color-bg-canvas); }
+.ctrl-ac-code {
+  font-family: 'DM Mono', monospace; font-size: 12px; font-weight: 500;
+  color: var(--color-text-main); flex-shrink: 0; width: 28px;
+}
+.ctrl-ac-name { color: var(--color-text-muted); min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.ctrl-year-row {
+  display: flex; align-items: center; gap: 10px;
+  border-top: 1px solid var(--color-border);
+  padding: 6px 14px; height: 34px;
+}
+.ctrl-year-label {
+  font-size: 9px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase;
+  color: var(--color-text-faint); flex-shrink: 0;
+}
+.yr-slider-wrap {
+  flex: 1; position: relative; height: 18px;
+}
+.yr-slider-track {
+  position: absolute; left: 0; right: 0; height: 2px;
+  background: var(--color-border); border-radius: 2px; top: 50%; margin-top: -1px;
+}
+.yr-slider-fill {
+  position: absolute; height: 2px; background: #F59E0B;
+  border-radius: 2px; top: 50%; margin-top: -1px; pointer-events: none;
+}
+.yr-range {
+  position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+  appearance: none; -webkit-appearance: none; background: transparent;
+  pointer-events: none; margin: 0;
+}
+.yr-range::-webkit-slider-thumb {
+  appearance: none; -webkit-appearance: none;
+  width: 13px; height: 13px; border-radius: 50%;
+  background: #F59E0B; border: 2px solid #fff;
+  box-shadow: 0 1px 3px rgba(0,0,0,.2);
+  cursor: pointer; pointer-events: all;
+}
+.ctrl-year-value {
+  font-family: 'DM Mono', monospace; font-size: 11px; font-weight: 500;
+  color: var(--color-text-muted); flex-shrink: 0; min-width: 66px; text-align: right;
+}
+
+/* ── Legend ───────────────────────────────────────────────── */
+.legend-card {
+  position: fixed; bottom: 80px; left: 20px; z-index: 200;
+  background: var(--color-bg-card); border: 1px solid var(--color-border);
+  border-radius: 8px; width: 200px;
+  box-shadow: 0 2px 8px rgba(15,23,42,.08);
+  overflow: hidden;
+}
+.legend-toggle-row {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 8px 14px; cursor: grab; user-select: none;
+}
+.legend-toggle-row:hover { background: var(--color-bg-canvas); }
+.legend-toggle-label {
+  font-size: 9px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase;
+  color: var(--color-text-main);
+}
+.legend-toggle-icon {
+  font-size: 10px; color: var(--color-text-faint); transition: transform 0.2s ease;
+  line-height: 1;
+}
+.legend-card.collapsed .legend-toggle-icon { transform: rotate(180deg); }
+.legend-body {
+  padding: 0 14px 10px; overflow: hidden;
+  max-height: 200px; transition: max-height 0.2s ease, padding 0.2s ease;
+}
+.legend-card.collapsed .legend-body { max-height: 0; padding-bottom: 0; }
+.legend-title {
+  font-size: 9px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase;
+  color: var(--color-text-main); margin-bottom: 8px;
+}
+.legend-gradient {
+  height: 8px; border-radius: 4px; margin-bottom: 5px;
+  background: linear-gradient(to right, #22C55E, #EAB308, #EF4444);
+}
+.legend-scale {
+  display: flex; justify-content: space-between;
+  font-size: 10px; color: var(--color-text-faint); font-family: 'DM Mono', monospace;
+}
+.legend-sep {
+  height: 1px; background: var(--color-border); margin: 8px 0;
+}
+.legend-size-row {
+  display: flex; align-items: center; gap: 8px; margin-bottom: 5px;
+}
+.legend-size-row:last-child { margin-bottom: 0; }
+.legend-bubble {
+  background: #94A3B8; border-radius: 50%; flex-shrink: 0; opacity: 0.7;
+}
+.legend-size-label { font-size: 10px; color: var(--color-text-faint); }
+
+/* ── Right panel ──────────────────────────────────────────── */
+.right-panel {
+  position: fixed; right: 0; top: 48px; bottom: 0; width: var(--panel-w);
+  background: var(--color-bg-card); border-left: 1px solid var(--color-border);
+  display: flex; flex-direction: column;
+  transform: translateX(100%); transition: transform var(--t);
+  z-index: 150; overflow: hidden;
+}
+.right-panel.open { transform: translateX(0); }
+
+.panel-header {
+  padding: 18px 20px 14px; border-bottom: 1px solid var(--color-border); flex-shrink: 0;
+  display: flex; align-items: flex-start; justify-content: space-between;
+}
+.panel-header-left { flex: 1; }
+.panel-eyebrow {
+  font-size: 11px; font-weight: 500; letter-spacing: 0.06em; text-transform: uppercase;
+  color: var(--color-text-muted); margin-bottom: 4px; line-height: 14px;
+}
+.panel-title {
+  font-family: 'DM Mono', monospace; font-size: 24px; font-weight: 500;
+  color: var(--color-text-main); letter-spacing: -0.02em; line-height: 1;
+}
+.panel-sub { font-size: 12px; color: var(--color-text-muted); margin-top: 4px; }
+.panel-close {
+  width: 28px; height: 28px; display: flex; align-items: center; justify-content: center;
+  cursor: pointer; color: var(--color-text-muted); font-size: 16px; border: none;
+  background: transparent; border-radius: 6px; transition: all var(--t); flex-shrink: 0;
+}
+.panel-close:hover { background: var(--color-bg-canvas); color: var(--color-text-main); }
+
+.panel-body { flex: 1; overflow-y: auto; }
+.panel-body::-webkit-scrollbar { width: 2px; }
+.panel-body::-webkit-scrollbar-thumb { background: var(--color-border); }
+
+/* Route table */
+.route-table { width: 100%; border-collapse: collapse; }
+.route-table thead tr {
+  border-bottom: 1px solid var(--color-border);
+}
+.route-table th {
+  font-size: 10px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase;
+  color: var(--color-text-faint); text-align: left; padding: 10px 20px;
+  white-space: nowrap;
+}
+.route-table th:not(:first-child) { text-align: right; }
+.route-table tbody tr {
+  border-bottom: 1px solid var(--color-border); cursor: pointer;
+  transition: background var(--t);
+}
+.route-table tbody tr:hover { background: var(--color-bg-canvas); }
+.route-table tbody tr.selected { background: #FEF3C7; }
+.route-table td { padding: 11px 20px; }
+.rt-route {
+  font-family: 'DM Mono', monospace; font-size: 12px; font-weight: 500;
+  color: var(--color-text-main);
+}
+.rt-cities { font-size: 11px; color: var(--color-text-muted); margin-top: 1px; }
+.rt-delay {
+  font-family: 'DM Mono', monospace; font-size: 12px; font-weight: 500;
+  text-align: right; font-variant-numeric: tabular-nums;
+}
+.rt-delay.good { color: var(--color-on-time); }
+.rt-delay.warn { color: var(--color-warn); }
+.rt-delay.bad  { color: var(--color-danger); }
+.rt-status { text-align: right; }
+.status-pill {
+  display: inline-block; font-size: 9px; font-weight: 600; letter-spacing: 0.06em;
+  text-transform: uppercase; padding: 2px 6px; border-radius: 3px;
+}
+.status-pill.good { color: var(--color-on-time); background: rgba(16,185,129,.1); }
+.status-pill.warn { color: var(--color-warn);    background: rgba(194,65,12,.1); }
+.status-pill.bad  { color: var(--color-danger);  background: rgba(220,38,38,.1); }
+
+.panel-search-flight {
+  margin: 16px 20px; display: block; padding: 10px 16px; text-align: center;
+  background: var(--color-accent); color: #fff; border-radius: 8px;
+  font-size: 13px; font-weight: 600; text-decoration: none;
+  transition: background var(--t); flex-shrink: 0;
+}
+.panel-search-flight:hover { background: var(--color-accent-dark); }
+
+/* ── Tooltip ──────────────────────────────────────────────── */
+.map-tooltip {
+  position: fixed; z-index: 300; pointer-events: none;
+  background: var(--color-bg-card); border: 1px solid var(--color-border);
+  border-radius: 8px; padding: 12px 14px;
+  box-shadow: 0 4px 16px rgba(15,23,42,.12);
+  min-width: 200px; max-width: 260px;
+  opacity: 0; transition: opacity 0.12s ease;
+}
+.map-tooltip.visible { opacity: 1; pointer-events: auto; }
+.tt-route {
+  font-family: 'DM Mono', monospace; font-size: 13px; font-weight: 500;
+  color: var(--color-text-main); margin-bottom: 6px;
+}
+.tt-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 3px; }
+.tt-label { font-size: 11px; color: var(--color-text-faint); }
+.tt-val { font-family: 'DM Mono', monospace; font-size: 11px; font-weight: 500; color: var(--color-text-main); }
+.tt-val.warn { color: #CA8A04; }
+.tt-val.bad  { color: #EF4444; }
+.tt-divider { height: 1px; background: var(--color-border); margin: 8px 0; }
+.tt-link {
+  display: block; text-align: center; font-size: 12px; font-weight: 600;
+  color: var(--color-accent); text-decoration: none; padding-top: 2px;
+  pointer-events: auto;
+}
+.tt-link:hover { color: var(--color-accent-dark); }
+
+/* ── Route result card ────────────────────────────────────── */
+.route-result-card {
+  position: fixed; z-index: 200; width: 260px;
+  background: var(--color-bg-card); border: 1px solid var(--color-border);
+  border-radius: 10px;
+  box-shadow: 0 4px 16px rgba(15,23,42,.12);
+  overflow: hidden;
+  pointer-events: auto;
+}
+.rrc-header {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 12px 14px 8px;
+}
+.rrc-route {
+  font-family: 'DM Mono', monospace; font-size: 16px; font-weight: 500;
+  color: var(--color-text-main); letter-spacing: -0.02em;
+}
+.rrc-close {
+  width: 24px; height: 24px; border: none; background: transparent;
+  font-size: 16px; cursor: pointer; color: var(--color-text-faint);
+  border-radius: 4px; display: flex; align-items: center; justify-content: center;
+  transition: all var(--t);
+}
+.rrc-close:hover { background: var(--color-bg-canvas); color: var(--color-text-main); }
+.rrc-metrics {
+  display: grid; grid-template-columns: 1fr 1fr;
+  border-top: 1px solid var(--color-border);
+  border-bottom: 1px solid var(--color-border);
+}
+.rrc-metric {
+  padding: 10px 14px; border-right: 1px solid var(--color-border);
+}
+.rrc-metric:last-child { border-right: none; }
+.rrc-metric-val {
+  font-family: 'DM Mono', monospace; font-size: 16px; font-weight: 500;
+  color: var(--color-text-main); line-height: 1;
+}
+.rrc-metric-val.good { color: var(--color-on-time); }
+.rrc-metric-val.warn { color: var(--color-warn); }
+.rrc-metric-val.bad  { color: var(--color-danger); }
+.rrc-metric-label {
+  font-size: 10px; font-weight: 500; letter-spacing: 0.06em; text-transform: uppercase;
+  color: var(--color-text-faint); margin-top: 3px;
+}
+.rrc-cta {
+  display: block; padding: 10px 14px; font-size: 12px; font-weight: 600;
+  color: #F59E0B; text-decoration: none; transition: background var(--t);
+}
+.rrc-cta:hover { background: var(--color-bg-canvas); }
+
+/* ── Back button (hub state) ──────────────────────────────── */
+.back-btn {
+  position: fixed; bottom: 32px; left: 50%; transform: translateX(-50%);
+  z-index: 200; display: none; align-items: center; gap: 6px;
+  height: 36px; padding: 0 16px;
+  background: var(--color-bg-card); border: 1px solid var(--color-border);
+  border-radius: 18px; cursor: pointer; font-size: 12px; font-weight: 500;
+  color: var(--color-text-muted); font-family: 'Public Sans', sans-serif;
+  box-shadow: 0 2px 8px rgba(15,23,42,.10); transition: all var(--t);
+}
+.back-btn:hover { color: var(--color-text-main); background: var(--color-bg-canvas); }
+.back-btn.visible { display: flex; }
+
+/* ── Metric tile (panel) ──────────────────────────────────── */
+.metric-grid {
+  display: grid; grid-template-columns: 1fr 1fr;
+  border-bottom: 1px solid var(--color-border);
+}
+.metric-tile {
+  padding: 14px 20px; border-right: 1px solid var(--color-border);
+  border-bottom: 1px solid var(--color-border);
+}
+.metric-tile:nth-child(2n) { border-right: none; }
+.metric-tile:nth-last-child(-n+2) { border-bottom: none; }
+.metric-tile-val {
+  font-family: 'DM Mono', monospace; font-size: 18px; font-weight: 500;
+  color: var(--color-text-main); letter-spacing: -0.02em; line-height: 1;
+  text-align: right;
+}
+.metric-tile-val.good { color: var(--color-on-time); }
+.metric-tile-val.warn { color: var(--color-warn); }
+.metric-tile-val.bad  { color: var(--color-danger); }
+.metric-tile-label {
+  font-size: 10px; font-weight: 500; letter-spacing: 0.06em; text-transform: uppercase;
+  color: var(--color-text-muted); margin-top: 3px; line-height: 14px;
+}
+.section-label {
+  font-size: 10px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase;
+  color: var(--color-text-faint); padding: 12px 20px 6px;
+}
+</style>
+</head>
+<body>
+
+<!-- Map canvas -->
+<div id="map"></div>
+
+<!-- Top bar -->
+<header class="topbar">
+  <div class="topbar-left">
+    <a class="topbar-brand" href="story.html"><img src="img/kyf-logo.svg" alt="KYF" height="22" style="display:block"></a>
+    <nav class="topbar-nav">
+      <a href="search.html">Search Route</a>
+      <a href="index.html" class="active">Explore Data</a>
+    </nav>
+  </div>
+  <nav class="topbar-nav">
+    <a href="story.html">About</a>
+    <a href="methodology.html">Methodology</a>
+    <a href="contact.html">Contact</a>
+  </nav>
+</header>
+
+<!-- Search + Year strip -->
+<div class="ctrl-row">
+  <div class="ctrl-search-row">
+    <div class="ctrl-field">
+      <div class="ctrl-field-label">Origin</div>
+      <input id="origin-input" type="text" maxlength="30" placeholder="Optional, e.g. SFO"
+        autocomplete="off" spellcheck="false">
+    </div>
+    <div class="ctrl-divider-v"></div>
+    <div class="ctrl-field">
+      <div class="ctrl-field-label">Destination</div>
+      <input id="dest-input" type="text" maxlength="30" placeholder="Optional, e.g. JFK"
+        autocomplete="off" spellcheck="false">
+    </div>
+    <button class="ctrl-search-btn" onclick="commitSearch()">Search →</button>
+  </div>
+  <div class="ctrl-search-error" id="search-error"></div>
+  <div class="ctrl-year-row">
+    <span class="ctrl-year-label">Years</span>
+    <div class="yr-slider-wrap">
+      <div class="yr-slider-track"></div>
+      <div class="yr-slider-fill" id="yr-fill" style="left:0%;width:100%"></div>
+      <input type="range" class="yr-range" id="yr-start" min="2018" max="2025" value="2018" step="1">
+      <input type="range" class="yr-range" id="yr-end"   min="2018" max="2025" value="2025" step="1">
+    </div>
+    <span class="ctrl-year-value" id="yr-label">2018–2025</span>
+  </div>
+</div>
+
+<!-- Legend -->
+<div class="legend-card" id="legend-card">
+  <div class="legend-toggle-row">
+    <span class="legend-toggle-label">Legend</span>
+    <span class="legend-toggle-icon">▼</span>
+  </div>
+  <div class="legend-body">
+    <div class="legend-title">% Dep Delayed (≥15 min)</div>
+    <div class="legend-gradient"></div>
+    <div class="legend-scale"><span>8%</span><span>15%</span><span>22%</span><span>30%+</span></div>
+    <div class="legend-sep"></div>
+    <div class="legend-title">Outbound Flights / Year</div>
+    <div class="legend-size-row">
+      <span class="legend-bubble" style="width:8px;height:8px"></span>
+      <span class="legend-size-label">&lt; 10k</span>
+    </div>
+    <div class="legend-size-row">
+      <span class="legend-bubble" style="width:14px;height:14px"></span>
+      <span class="legend-size-label">10k – 100k</span>
+    </div>
+    <div class="legend-size-row">
+      <span class="legend-bubble" style="width:22px;height:22px"></span>
+      <span class="legend-size-label">&gt; 100k</span>
+    </div>
+  </div>
+</div>
+
+<!-- Right panel -->
+<div class="right-panel" id="right-panel">
+  <div class="panel-header">
+    <div class="panel-header-left">
+      <div class="panel-eyebrow" id="panel-eyebrow">Hub airport</div>
+      <div class="panel-title" id="panel-title">—</div>
+      <div class="panel-sub" id="panel-sub"></div>
+    </div>
+    <button class="panel-close" onclick="exitHubState()">×</button>
+  </div>
+  <div class="metric-grid" id="panel-metrics"></div>
+  <div class="section-label">Routes from this hub</div>
+  <div class="panel-body">
+    <table class="route-table" id="route-table">
+      <thead>
+        <tr>
+          <th>Route</th>
+          <th>Avg dep delay</th>
+        </tr>
+      </thead>
+      <tbody id="route-tbody"></tbody>
+    </table>
+  </div>
+  <a class="panel-search-flight" id="panel-search-link" href="search.html">Search a flight on this route →</a>
+</div>
+
+<!-- Tooltip -->
+<div class="map-tooltip" id="map-tooltip">
+  <div class="tt-route" id="tt-route"></div>
+  <div class="tt-row">
+    <span class="tt-label">Avg dep delay</span>
+    <span class="tt-val" id="tt-delay"></span>
+  </div>
+  <div class="tt-row">
+    <span class="tt-label">% dep delayed</span>
+    <span class="tt-val" id="tt-pct"></span>
+  </div>
+  <div class="tt-row">
+    <span class="tt-label">Flights/year</span>
+    <span class="tt-val" id="tt-flights"></span>
+  </div>
+  <div class="tt-divider"></div>
+  <a class="tt-link" id="tt-link" href="search.html">Open Route Report →</a>
+</div>
+
+<!-- Route search result card -->
+<div class="route-result-card" id="route-result-card" style="display:none">
+  <div class="rrc-header">
+    <div class="rrc-route" id="rrc-route">—</div>
+    <button class="rrc-close" onclick="exitRouteSearch()">×</button>
+  </div>
+  <div class="rrc-metrics" id="rrc-metrics"></div>
+  <a class="rrc-cta" id="rrc-cta" href="search.html">View full route report →</a>
+</div>
+
+<!-- Back button -->
+<button class="back-btn" id="back-btn" onclick="exitHubState()">← All airports</button>
+
+<script>
+// ── Config ──────────────────────────────────────────────────
+const MAPBOX_TOKEN = "pk.eyJ1IjoiZXRvaWxlYm9vdHMiLCJhIjoiY21xMTEzcGlnMDJ2ZDJxcXg3YTBjdjhvZCJ9.CIplazdFcRcEJo5t89LS8g";
+
+// ── State ────────────────────────────────────────────────────
+let appState      = 'global'; // 'global' | 'hub'
+let selectedHub   = null;     // airport properties
+let selectedRoute = null;     // route properties
+let currentYear   = 'all';
+let airportsData  = null;
+let routesData    = null;
+
+// ── Map ──────────────────────────────────────────────────────
+mapboxgl.accessToken = MAPBOX_TOKEN;
+
+const map = new mapboxgl.Map({
+  container: 'map',
+  style: 'mapbox://styles/mapbox/light-v11',
+  center: [-96, 38.5],
+  zoom: 3.6,
+  minZoom: 2,
+  maxZoom: 14,
+  projection: 'mercator',
+});
+
+map.addControl(new mapboxgl.NavigationControl({ showCompass: false }), 'bottom-right');
+
+
+// ── Color helpers ────────────────────────────────────────────
+// Matches search.js: #E2E8F0 → #F59E0B over pct range 8–30
+function delayClass(pct) {
+  if (pct < 15) return 'good';
+  if (pct < 22) return 'warn';
+  return 'bad';
+}
+function fmtFlights(n) {
+  if (n >= 1000000) return (n/1000000).toFixed(1)+'M';
+  return Math.round(n/1000)+'k';
+}
+const COLOR_EXPR = ['interpolate',['linear'],['get','pct_delayed'],
+  8, '#22C55E', 19, '#EAB308', 30, '#EF4444',
+];
+function makeRadiusExpr(fltProp = 'flights') {
+  return ['step', ['coalesce', ['get', fltProp], ['get', 'flights']],
+    4,        // < 10k/year → small
+    10000, 7, // 10k–100k/year → medium
+    100000, 11 // > 100k/year → large
+  ];
+}
+const RADIUS_EXPR = makeRadiusExpr('flights');
+
+// ── Year slider ──────────────────────────────────────────────
+let yearMin = 2018, yearMax = 2025;
+
+function initYearSlider() {
+  const startEl = document.getElementById('yr-start');
+  const endEl   = document.getElementById('yr-end');
+  const fillEl  = document.getElementById('yr-fill');
+  const labelEl = document.getElementById('yr-label');
+
+  function update() {
+    let s = parseInt(startEl.value), e = parseInt(endEl.value);
+    if (s > e) [s, e] = [e, s];
+    yearMin = s; yearMax = e;
+    const span    = 2025 - 2018;
+    const thumbPx = 13;
+    const W       = startEl.offsetWidth || startEl.getBoundingClientRect().width;
+    const track   = W - thumbPx;
+    const leftPx  = (s - 2018) / span * track + thumbPx / 2;
+    const rightPx = (e - 2018) / span * track + thumbPx / 2;
+    fillEl.style.left  = leftPx + 'px';
+    fillEl.style.width = (rightPx - leftPx) + 'px';
+    labelEl.textContent = s === e ? String(s) : `${s}–${e}`;
+    applyYearRange(s, e);
+  }
+
+  startEl.addEventListener('input', update);
+  endEl.addEventListener('input', update);
+}
+
+function applyYearRange(s, e) {
+  if (!map.getSource('airports') || !airportsData) return;
+
+  const years = [];
+  for (let y = s; y <= e; y++) years.push(y);
+
+  const newFeatures = airportsData.features.map(f => {
+    const p = f.properties;
+    let totalFlt = 0, sumPct = 0;
+    for (const y of years) {
+      const pct = p[`pct_${y}`];
+      const flt = p[`flt_${y}`] || 0;
+      if (pct != null) { sumPct += pct * flt; totalFlt += flt; }
+    }
+    // Always use annual averages for consistent sizing across all year selections
+    const pct_range = totalFlt > 0 ? +(sumPct / totalFlt).toFixed(2) : p.pct_delayed;
+    const flt_range = totalFlt > 0 ? Math.round(totalFlt / years.length) : Math.round(p.flights / 8);
+    return { ...f, properties: { ...p, pct_range, flt_range } };
+  });
+
+  map.getSource('airports').setData({ type: 'FeatureCollection', features: newFeatures });
+
+  map.setPaintProperty('airports-circle', 'circle-color', ['interpolate',['linear'],
+    ['coalesce',['get','pct_range'],['get','pct_delayed']], 8,'#22C55E', 19,'#EAB308', 30,'#EF4444']);
+  map.setPaintProperty('airports-circle', 'circle-radius', makeRadiusExpr('flt_range'));
+  map.setPaintProperty('airports-selected', 'circle-radius', makeRadiusExpr('flt_range'));
+}
+
+// ── Data ─────────────────────────────────────────────────────
+async function loadData() {
+  try {
+    const opts = { cache: 'no-store' };
+    const [a, r] = await Promise.all([
+      fetch('./data/aggregations/map/airports.geojson', opts).then(r => r.json()),
+      fetch('./data/aggregations/map/routes.geojson',   opts).then(r => r.json()),
+    ]);
+    airportsData = a;
+    routesData   = r;
+  } catch(e) {
+    airportsData = getMockAirports();
+    routesData   = getMockRoutes();
+  }
+  // Show dropdown if an input was already focused when data arrived
+  [['origin-input','origin-dropdown'],['dest-input','dest-dropdown']].forEach(([id, dropId]) => {
+    if (document.activeElement && document.activeElement.id === id)
+      exploreShowDrop(id, dropId, document.getElementById(id).value);
+  });
+  addSources();
+  addLayers();
+  bindEvents();
+  applyYearRange(yearMin, yearMax);
+}
+
+// ── Mock data ─────────────────────────────────────────────────
+function getMockAirports() {
+  const pts = [
+    ["SFO","San Francisco","CA",37.6213,-122.379,1284000,12.8,19.4,1.6],
+    ["LAX","Los Angeles","CA",33.9425,-118.408,1840000,11.2,17.2,1.2],
+    ["ORD","Chicago O'Hare","IL",41.9742,-87.907,1620000,16.4,26.8,2.1],
+    ["JFK","New York JFK","NY",40.6413,-73.778,980000,14.8,23.2,1.9],
+    ["ATL","Atlanta","GA",33.6367,-84.428,2240000,13.4,21.8,1.7],
+    ["DFW","Dallas/Fort Worth","TX",32.8998,-97.040,1880000,13.8,22.4,1.8],
+    ["DEN","Denver","CO",39.8561,-104.674,1420000,11.8,18.4,1.4],
+    ["SEA","Seattle","WA",47.4502,-122.309,980000,10.2,15.8,1.1],
+    ["BOS","Boston","MA",42.3656,-71.010,820000,16.2,27.4,2.2],
+    ["MIA","Miami","FL",25.7959,-80.287,840000,14.4,22.8,1.9],
+    ["LAS","Las Vegas","NV",36.0840,-115.154,860000,8.8,13.2,0.8],
+    ["PHX","Phoenix","AZ",33.4373,-112.008,1040000,9.4,14.8,0.9],
+    ["MSP","Minneapolis","MN",44.8848,-93.222,760000,14.8,23.4,1.8],
+    ["DTW","Detroit","MI",42.2162,-83.355,740000,13.2,21.4,1.6],
+    ["EWR","Newark","NJ",40.6895,-74.175,820000,18.2,29.4,2.4],
+    ["PHL","Philadelphia","PA",39.8729,-75.244,680000,17.4,28.2,2.2],
+    ["IAH","Houston","TX",29.9902,-95.337,1020000,13.6,22.1,1.7],
+    ["CLT","Charlotte","NC",35.2140,-80.943,1080000,12.4,19.8,1.5],
+    ["SLC","Salt Lake City","UT",40.7884,-111.978,560000,10.8,16.4,1.2],
+    ["HNL","Honolulu","HI",21.3187,-157.923,480000,6.2,9.4,0.6],
+    ["MDW","Chicago Midway","IL",41.7868,-87.752,540000,15.2,24.8,1.9],
+    ["TPA","Tampa","FL",27.9755,-82.533,620000,11.6,18.2,1.3],
+    ["PDX","Portland","OR",45.5898,-122.597,560000,9.8,14.8,1.0],
+    ["AUS","Austin","TX",30.1975,-97.666,580000,12.2,19.4,1.5],
+    ["BNA","Nashville","TN",36.1245,-86.678,500000,13.8,22.2,1.7],
+  ];
+  return {
+    type: "FeatureCollection",
+    features: pts.map(([code,city,state,lat,lng,flights,mean_delay,pct_delayed,cancel_pct]) => ({
+      type: "Feature",
+      geometry: { type: "Point", coordinates: [lng, lat] },
+      properties: { code, city, state, flights, mean_delay, pct_delayed, cancel_pct }
+    }))
+  };
+}
+
+function getMockRoutes() {
+  const coords = {
+    SFO:[37.6213,-122.379], LAX:[33.9425,-118.408], ORD:[41.9742,-87.907],
+    JFK:[40.6413,-73.778],  ATL:[33.6367,-84.428],  DFW:[32.8998,-97.040],
+    DEN:[39.8561,-104.674], SEA:[47.4502,-122.309],  BOS:[42.3656,-71.010],
+    MIA:[25.7959,-80.287],  LAS:[36.0840,-115.154],  EWR:[40.6895,-74.175],
+    CLT:[35.2140,-80.943],  IAH:[29.9902,-95.337],   MSP:[44.8848,-93.222],
+  };
+  const routes = [
+    ["SFO","LAX","Los Angeles","San Francisco",148000,9.2,14.1],
+    ["SFO","JFK","New York JFK","San Francisco",84000,14.2,22.1],
+    ["SFO","ORD","Chicago O'Hare","San Francisco",72000,15.8,24.4],
+    ["SFO","SEA","Seattle","San Francisco",112000,10.4,15.8],
+    ["SFO","DEN","Denver","San Francisco",68000,11.8,18.2],
+    ["LAX","JFK","New York JFK","Los Angeles",124000,13.8,21.4],
+    ["LAX","ORD","Chicago O'Hare","Los Angeles",108000,14.4,22.8],
+    ["LAX","LAS","Las Vegas","Los Angeles",184000,8.4,12.8],
+    ["LAX","DFW","Dallas/Fort Worth","Los Angeles",96000,12.6,19.8],
+    ["ORD","JFK","New York JFK","Chicago O'Hare",124000,16.8,27.4],
+    ["ORD","ATL","Atlanta","Chicago O'Hare",148000,13.2,21.2],
+    ["JFK","MIA","Miami","New York JFK",96000,15.4,24.8],
+    ["ATL","MIA","Miami","Atlanta",104000,12.8,20.4],
+    ["DFW","ORD","Chicago O'Hare","Dallas/Fort Worth",112000,14.8,23.4],
+    ["DEN","LAX","Los Angeles","Denver",88000,10.2,16.4],
+    ["BOS","JFK","New York JFK","Boston",72000,18.4,30.2],
+    ["EWR","ORD","Chicago O'Hare","Newark",96000,19.2,31.4],
+    ["CLT","ORD","Chicago O'Hare","Charlotte",80000,14.2,22.8],
+    ["IAH","ORD","Chicago O'Hare","Houston",84000,15.4,24.2],
+    ["MSP","ORD","Chicago O'Hare","Minneapolis",90000,16.8,27.2],
+  ];
+  return {
+    type: "FeatureCollection",
+    features: routes.map(([orig,dest,dest_city,orig_city,flights,mean_delay,pct_delayed]) => {
+      const oc = coords[orig], dc = coords[dest];
+      if (!oc || !dc) return null;
+      return {
+        type: "Feature",
+        geometry: { type: "LineString", coordinates: [[oc[1],oc[0]], [dc[1],dc[0]]] },
+        properties: { origin:orig, dest, origin_city:orig_city, dest_city, flights, mean_delay, pct_delayed }
+      };
+    }).filter(Boolean)
+  };
+}
+
+// ── Sources & layers ──────────────────────────────────────────
+function addSources() {
+  map.addSource('airports', { type: 'geojson', data: airportsData });
+  map.addSource('routes',   { type: 'geojson', data: routesData });
+  map.addSource('hub-routes', {
+    type: 'geojson',
+    data: { type: 'FeatureCollection', features: [] }
+  });
+  map.addSource('selected-route', {
+    type: 'geojson',
+    data: { type: 'FeatureCollection', features: [] }
+  });
+}
+
+function addLayers() {
+  // Selected route (search result highlight)
+  map.addLayer({
+    id: 'selected-route-line', type: 'line', source: 'selected-route',
+    layout: { 'line-cap': 'round', 'line-join': 'round' },
+    paint: {
+      'line-color': '#EA580C',
+      'line-width': 3,
+      'line-opacity': 0.9,
+    }
+  });
+
+  // Hub routes (gray, shown in hub state)
+  map.addLayer({
+    id: 'hub-routes-line', type: 'line', source: 'hub-routes',
+    layout: { 'line-cap': 'round', 'line-join': 'round' },
+    paint: {
+      'line-color': '#94A3B8',
+      'line-width': 1.5,
+      'line-opacity': 0.6,
+    }
+  });
+
+  // Hub routes hover (amber)
+  map.addLayer({
+    id: 'hub-routes-hover', type: 'line', source: 'hub-routes',
+    layout: { 'line-cap': 'round', 'line-join': 'round' },
+    paint: {
+      'line-color': '#F59E0B',
+      'line-width': 2.5,
+      'line-opacity': 0,
+    }
+  });
+
+  // Airport circles — filled, colored by delay rate, sized by flight volume
+  map.addLayer({
+    id: 'airports-circle', type: 'circle', source: 'airports',
+    paint: {
+      'circle-radius': ['step',['get','flights'], 4, 10000,7, 100000,11],
+      'circle-color': COLOR_EXPR,
+      'circle-opacity': 0.9,
+      'circle-stroke-width': 1.5,
+      'circle-stroke-color': '#FFFFFF',
+    }
+  });
+
+  // Airport selected (amber ring — same size as data circle, just amber stroke)
+  map.addLayer({
+    id: 'airports-selected', type: 'circle', source: 'airports',
+    filter: ['==', ['get', 'code'], ''],
+    paint: {
+      'circle-radius': makeRadiusExpr('flt_range'),
+      'circle-color': '#F59E0B',
+      'circle-opacity': 1,
+      'circle-stroke-width': 2.5,
+      'circle-stroke-color': '#FFFFFF',
+    }
+  });
+
+  // Airport labels
+  map.addLayer({
+    id: 'airports-label', type: 'symbol', source: 'airports',
+    minzoom: 3.5,
+    layout: {
+      'text-field': ['get','code'],
+      'text-font': ['DIN Pro Medium','Arial Unicode MS Regular'],
+      'text-size': 10, 'text-offset': [0, -1.4], 'text-anchor': 'bottom',
+    },
+    paint: {
+      'text-color': '#475569',
+      'text-halo-color': 'rgba(255,255,255,0.9)', 'text-halo-width': 1,
+    }
+  });
+}
+
+// ── State machine ─────────────────────────────────────────────
+function enterHubState(airportProps) {
+  appState    = 'hub';
+  selectedHub = airportProps;
+
+  // Highlight selected airport
+  map.setFilter('airports-selected', ['==', ['get','code'], airportProps.code]);
+
+  // Dim all airports except selected
+  map.setPaintProperty('airports-circle', 'circle-opacity',
+    ['case', ['==', ['get','code'], airportProps.code], 0, 0.2]);
+  map.setPaintProperty('airports-circle', 'circle-stroke-opacity',
+    ['case', ['==', ['get','code'], airportProps.code], 0, 0.3]);
+
+  // Load hub routes
+  const hubRoutes = routesData.features.filter(f =>
+    f.properties.origin === airportProps.code || f.properties.dest === airportProps.code
+  );
+  map.getSource('hub-routes').setData({ type: 'FeatureCollection', features: hubRoutes });
+
+  // Show panel
+  openPanel(airportProps, hubRoutes.map(f => f.properties));
+
+  // Show back button
+  document.getElementById('back-btn').classList.add('visible');
+
+  // Fly to airport
+  const feat = airportsData.features.find(f => f.properties.code === airportProps.code);
+  if (feat) {
+    map.flyTo({ center: feat.geometry.coordinates, zoom: Math.max(map.getZoom(), 5), duration: 700 });
+  }
+}
+
+function exitHubState() {
+  appState      = 'global';
+  selectedHub   = null;
+  selectedRoute = null;
+
+  // Reset airport styling
+  map.setFilter('airports-selected', ['==', ['get','code'], '']);
+  map.setPaintProperty('airports-circle', 'circle-opacity', 0.9);
+  map.setPaintProperty('airports-circle', 'circle-stroke-opacity', 1);
+
+  // Clear hub routes and route highlight
+  map.getSource('hub-routes').setData({ type: 'FeatureCollection', features: [] });
+  map.setPaintProperty('hub-routes-hover', 'line-opacity', 0);
+  exitRouteSearch();
+
+  // Close panel
+  document.getElementById('right-panel').classList.remove('open');
+  document.getElementById('back-btn').classList.remove('visible');
+
+  // Reset route table selection
+  document.querySelectorAll('#route-tbody tr').forEach(r => r.classList.remove('selected'));
+}
+
+// ── Panel ─────────────────────────────────────────────────────
+function openPanel(airport, routes) {
+  const pct = airport.pct_range ?? airport.pct_delayed;
+  const dcls = delayClass(pct);
+  const cityLabel = (airport.city || '').endsWith(', ' + airport.state) ? airport.city : airport.city + ', ' + airport.state;
+  document.getElementById('panel-eyebrow').textContent = cityLabel;
+  document.getElementById('panel-title').textContent   = airport.code;
+  document.getElementById('panel-sub').textContent     = fmtFlights(airport.flt_range ?? airport.flights) + ' flights/year' + (routes.length ? ' · ' + routes.length + ' routes' : '');
+
+  document.getElementById('panel-metrics').innerHTML = `
+    <div class="metric-tile">
+      <div class="metric-tile-val ${dcls}">${parseFloat(pct).toFixed(1)}%</div>
+      <div class="metric-tile-label">Dep delay rate</div>
+    </div>
+    <div class="metric-tile">
+      <div class="metric-tile-val ${dcls}">${parseFloat(airport.mean_delay).toFixed(1)} min</div>
+      <div class="metric-tile-label">Avg dep delay</div>
+    </div>`;
+
+  const sectionLabel = document.querySelector('.section-label');
+  const tbody = document.getElementById('route-tbody');
+
+  if (!routes.length) {
+    sectionLabel.textContent = '';
+    tbody.innerHTML = `<tr><td colspan="3" style="padding:20px;text-align:center;color:var(--color-text-faint);font-size:12px">No route detail data for this airport.<br>Use Search Route to look up a specific flight.</td></tr>`;
+  } else {
+    sectionLabel.textContent = 'Routes from this hub';
+    tbody.innerHTML = routes.map(r => {
+      const dcls2 = delayClass(r.pct_delayed);
+      const dest = r.origin === airport.code ? r.dest : r.origin;
+      const city = r.origin === airport.code ? r.dest_city : r.origin_city;
+      return `
+        <tr onclick="selectRoute(this,'${r.origin}','${r.dest}')">
+          <td>
+            <div class="rt-route">${airport.code} → ${dest}</div>
+            <div class="rt-cities">${city}</div>
+          </td>
+          <td><div class="rt-delay ${dcls2}">+${parseFloat(r.mean_delay).toFixed(0)} min</div></td>
+        </tr>`;
+    }).join('');
+  }
+
+  document.getElementById('right-panel').classList.add('open');
+  setTimeout(() => map.resize(), 220);
+}
+
+function selectRoute(row, origin, dest) {
+  document.querySelectorAll('#route-tbody tr').forEach(r => r.classList.remove('selected'));
+  row.classList.add('selected');
+  selectedRoute = routesData.features.find(
+    f => (f.properties.origin === origin && f.properties.dest === dest) ||
+         (f.properties.origin === dest   && f.properties.dest === origin)
+  );
+  const link = document.getElementById('panel-search-link');
+  link.href = `search.html?from=${origin}&to=${dest}`;
+}
+
+// ── Tooltip ───────────────────────────────────────────────────
+const tooltip = document.getElementById('map-tooltip');
+let tooltipHovered = false;
+
+tooltip.addEventListener('mouseenter', () => { tooltipHovered = true; });
+tooltip.addEventListener('mouseleave', () => {
+  tooltipHovered = false;
+  hideTooltip();
+});
+
+function showTooltip(props, x, y) {
+  // Compute year-range weighted stats
+  let totalFlt = 0, sumPct = 0, sumMean = 0;
+  for (let y = yearMin; y <= yearMax; y++) {
+    const flt = props[`flt_${y}`];
+    const pct = props[`pct_${y}`];
+    const mn  = props[`mean_${y}`];
+    if (flt != null && pct != null) { sumPct += pct * flt; sumMean += mn * flt; totalFlt += flt; }
+  }
+  const pct  = totalFlt > 0 ? sumPct / totalFlt  : props.pct_delayed;
+  const mean = totalFlt > 0 ? sumMean / totalFlt : props.mean_delay;
+  const flt  = totalFlt > 0 ? Math.round(totalFlt / (yearMax - yearMin + 1)) : Math.round(props.flights / 8);
+  const dcls = delayClass(pct);
+  document.getElementById('tt-route').textContent   = props.origin + ' → ' + props.dest;
+  document.getElementById('tt-delay').textContent   = '+' + mean.toFixed(1) + ' min';
+  document.getElementById('tt-delay').className     = 'tt-val ' + dcls;
+  document.getElementById('tt-pct').textContent     = pct.toFixed(1) + '%';
+  document.getElementById('tt-pct').className       = 'tt-val ' + dcls;
+  document.getElementById('tt-flights').textContent = fmtFlights(flt) + '/year';
+  document.getElementById('tt-link').href           = `search.html?from=${props.origin}&to=${props.dest}`;
+
+  const tw = tooltip.offsetWidth  || 220;
+  const th = tooltip.offsetHeight || 140;
+  const vw = window.innerWidth;
+  const vh = window.innerHeight;
+  let left = x + 14;
+  let top  = y - th / 2;
+  if (left + tw > vw - 10) left = x - tw - 14;
+  if (top < 10) top = 10;
+  if (top + th > vh - 10) top = vh - th - 10;
+  tooltip.style.left = left + 'px';
+  tooltip.style.top  = top  + 'px';
+  tooltip.classList.add('visible');
+}
+
+function hideTooltip() {
+  if (!tooltipHovered) tooltip.classList.remove('visible');
+}
+
+// ── Events ────────────────────────────────────────────────────
+function bindEvents() {
+  // Click airport
+  map.on('click', 'airports-circle', e => {
+    const p = e.features[0].properties;
+    e.originalEvent.stopPropagation();
+    enterHubState(p);
+  });
+
+  // Click selected hub airport again → exit
+  map.on('click', 'airports-selected', e => {
+    e.originalEvent.stopPropagation();
+    exitHubState();
+  });
+
+  // Hover route (hub state)
+  map.on('mousemove', 'hub-routes-line', e => {
+    const p = e.features[0].properties;
+    map.setPaintProperty('hub-routes-hover', 'line-opacity',
+      ['case',
+        ['all',['==',['get','origin'],p.origin],['==',['get','dest'],p.dest]], 0.9,
+        0]);
+    map.getCanvas().style.cursor = 'pointer';
+    showTooltip(p, e.originalEvent.clientX, e.originalEvent.clientY);
+  });
+
+  map.on('mouseleave', 'hub-routes-line', () => {
+    map.setPaintProperty('hub-routes-hover', 'line-opacity', 0);
+    map.getCanvas().style.cursor = '';
+    setTimeout(() => { if (!tooltipHovered) hideTooltip(); }, 80);
+  });
+
+  // Click route arc → navigate to report
+  map.on('click', 'hub-routes-line', e => {
+    const p = e.features[0].properties;
+    e.originalEvent.stopPropagation();
+    window.location.href = `search.html?from=${p.origin}&to=${p.dest}`;
+  });
+
+  // Cursor on airports
+  map.on('mouseenter', 'airports-circle', () => { map.getCanvas().style.cursor = 'pointer'; });
+  map.on('mouseleave', 'airports-circle', () => { map.getCanvas().style.cursor = ''; });
+
+  // Click blank → exit hub
+  map.on('click', e => {
+    const feats = map.queryRenderedFeatures(e.point, { layers: ['airports-circle','airports-selected','hub-routes-line'] });
+    if (!feats.length && appState === 'hub') exitHubState();
+  });
+}
+
+// ── Search error helpers ──────────────────────────────────────
+function showSearchError(msg) {
+  const el = document.getElementById('search-error');
+  el.textContent = msg;
+  el.style.display = 'block';
+}
+// ── Explore autocomplete ──────────────────────────────────────
+let exploreAcActive = null;
+
+function exploreMatchAirports(query) {
+  const src = airportsData?.features;
+  if (!src) return [];
+  if (!query.trim()) {
+    return [...src].sort((a, b) => a.properties.code.localeCompare(b.properties.code)).map(f => f.properties);
+  }
+  const q = query.trim().toUpperCase();
+  const rest = query.trim().toLowerCase();
+  const byCode = src.filter(f => f.properties.code.startsWith(q)).map(f => f.properties);
+  const byCity = src.filter(f =>
+    !f.properties.code.startsWith(q) &&
+    ((f.properties.city || '').toLowerCase().includes(rest) || (f.properties.name || '').toLowerCase().includes(rest))
+  ).map(f => f.properties);
+  return [...byCode, ...byCity];
+}
+
+function exploreFormatCity(city, state) {
+  if (!state) return city || '';
+  if ((city || '').endsWith(`, ${state}`)) return city;
+  return `${city}, ${state}`;
+}
+
+function exploreShowDrop(inputId, dropId, query) {
+  const drop = document.getElementById(dropId);
+  const inp  = document.getElementById(inputId);
+  const matches = exploreMatchAirports(query);
+  if (!matches.length) { drop.style.display = 'none'; return; }
+  drop.innerHTML = matches.map(p =>
+    `<div class="ctrl-ac-item" data-code="${p.code}" data-input="${inputId}" tabindex="-1">
+      <span class="ctrl-ac-code">${p.code}</span>
+      <span class="ctrl-ac-name">${exploreFormatCity(p.city, p.state)}</span>
+    </div>`
+  ).join('');
+  // Position fixed relative to the ctrl-field element
+  const field = inp.closest('.ctrl-field');
+  const rect  = field.getBoundingClientRect();
+  drop.style.top   = (rect.bottom + 6) + 'px';
+  drop.style.left  = rect.left + 'px';
+  drop.style.width = rect.width + 'px';
+  drop.style.display = 'block';
+  drop.querySelectorAll('.ctrl-ac-item').forEach(item => {
+    item.addEventListener('mousedown', e => {
+      e.preventDefault();
+      document.getElementById(item.dataset.input).value = item.dataset.code;
+      drop.style.display = 'none';
+      clearSearchError();
+    });
+  });
+}
+
+function exploreHideDrop(dropId) {
+  const d = document.getElementById(dropId);
+  if (d) d.style.display = 'none';
+}
+
+[['origin-input','origin-dropdown'],['dest-input','dest-dropdown']].forEach(([inputId, dropId]) => {
+  const el = document.getElementById(inputId);
+  el.addEventListener('focus', () => { exploreAcActive = inputId; exploreShowDrop(inputId, dropId, el.value); });
+  el.addEventListener('input', () => { clearSearchError(); exploreShowDrop(inputId, dropId, el.value); });
+  el.addEventListener('keydown', e => {
+    if (e.key === 'Enter') { exploreHideDrop(dropId); commitSearch(); }
+    if (e.key === 'Escape') exploreHideDrop(dropId);
+    if (e.key === 'ArrowDown') {
+      const items = document.querySelectorAll(`#${dropId} .ctrl-ac-item`);
+      if (items.length) { e.preventDefault(); items[0].focus(); }
+    }
+  });
+  el.addEventListener('blur', () => setTimeout(() => exploreHideDrop(dropId), 150));
+  // Dropdown div is parsed after this script block, so look it up lazily
+  document.addEventListener('keydown', e => {
+    if (exploreAcActive !== inputId) return;
+    const drop = document.getElementById(dropId);
+    if (!drop || drop.style.display === 'none') return;
+    const items = [...drop.querySelectorAll('.ctrl-ac-item')];
+    const idx = items.indexOf(document.activeElement);
+    if (e.key === 'ArrowDown' && idx < items.length - 1) { e.preventDefault(); items[idx + 1].focus(); }
+    if (e.key === 'ArrowUp') { e.preventDefault(); idx > 0 ? items[idx - 1].focus() : document.getElementById(inputId).focus(); }
+    if (e.key === 'Enter' && document.activeElement.classList.contains('ctrl-ac-item')) {
+      document.activeElement.dispatchEvent(new MouseEvent('mousedown'));
+    }
+  });
+});
+
+function clearSearchError() {
+  document.getElementById('search-error').style.display = 'none';
+}
+
+// ── Route search highlight ────────────────────────────────────
+let _routeMidpoint = null;
+
+function _positionRouteCard() {
+  if (!_routeMidpoint) return;
+  const card = document.getElementById('route-result-card');
+  const pt = map.project(_routeMidpoint);
+  card.style.left = Math.round(pt.x - card.offsetWidth / 2) + 'px';
+  card.style.top  = Math.round(pt.y - card.offsetHeight / 2) + 'px';
+}
+
+function showRouteResult(orig, dest, routeProps) {
+  const routeFeat = routesData?.features.find(f =>
+    (f.properties.origin === orig && f.properties.dest === dest) ||
+    (f.properties.origin === dest && f.properties.dest === orig)
+  );
+  if (routeFeat) {
+    map.getSource('selected-route').setData({ type: 'FeatureCollection', features: [routeFeat] });
+    const coords = routeFeat.geometry.coordinates;
+    const bounds = coords.reduce((b, c) => b.extend(c), new mapboxgl.LngLatBounds(coords[0], coords[0]));
+    map.fitBounds(bounds, { padding: { top: 140, bottom: 100, left: 60, right: 60 }, duration: 800 });
+    _routeMidpoint = [(coords[0][0] + coords[coords.length-1][0]) / 2,
+                      (coords[0][1] + coords[coords.length-1][1]) / 2];
+  }
+
+  const dcls = delayClass(routeProps.pct_delayed);
+  document.getElementById('rrc-route').textContent = `${orig} → ${dest}`;
+  const totalFlights = routeProps.flights ?? null;
+  document.getElementById('rrc-metrics').innerHTML = `
+    <div class="rrc-metric">
+      <div class="rrc-metric-val ${dcls}">+${parseFloat(routeProps.mean_delay).toFixed(0)} min</div>
+      <div class="rrc-metric-label">Avg dep delay</div>
+    </div>
+    <div class="rrc-metric">
+      <div class="rrc-metric-val ${dcls}">${parseFloat(routeProps.pct_delayed).toFixed(1)}%</div>
+      <div class="rrc-metric-label">% dep delayed</div>
+    </div>
+    ${totalFlights ? `<div class="rrc-metric">
+      <div class="rrc-metric-val">${fmtFlights(totalFlights)}</div>
+      <div class="rrc-metric-label">Total flights</div>
+    </div>` : ''}`;
+  document.getElementById('rrc-cta').href = `search.html?from=${orig}&to=${dest}`;
+  const card = document.getElementById('route-result-card');
+  card.style.display = 'block';
+  requestAnimationFrame(_positionRouteCard);
+}
+
+function exitRouteSearch() {
+  document.getElementById('route-result-card').style.display = 'none';
+  _routeMidpoint = null;
+  if (map.getSource('selected-route'))
+    map.getSource('selected-route').setData({ type: 'FeatureCollection', features: [] });
+}
+
+// ── Search ────────────────────────────────────────────────────
+function commitSearch() {
+  clearSearchError();
+  const orig = document.getElementById('origin-input').value.trim().toUpperCase().replace(/[^A-Z]/g, '').slice(0, 3);
+  const dest = document.getElementById('dest-input').value.trim().toUpperCase().replace(/[^A-Z]/g, '').slice(0, 3);
+  if (!orig && !dest) return;
+
+  const validCode = c => /^[A-Z]{3}$/.test(c);
+  const findAirport = c => airportsData?.features.find(f => f.properties.code === c);
+
+  // Validate entered codes
+  if (orig && !validCode(orig)) { showSearchError(`"${orig}" is not a valid airport code.`); return; }
+  if (dest && !validCode(dest)) { showSearchError(`"${dest}" is not a valid airport code.`); return; }
+  if (orig && !findAirport(orig)) { showSearchError(`Airport "${orig}" not found in dataset.`); return; }
+  if (dest && !findAirport(dest)) { showSearchError(`Airport "${dest}" not found in dataset.`); return; }
+
+  // Both filled → highlight route on map, show info card
+  if (orig && dest) {
+    const routeFeat = routesData?.features.find(f =>
+      (f.properties.origin === orig && f.properties.dest === dest) ||
+      (f.properties.origin === dest && f.properties.dest === orig)
+    );
+    if (routeFeat) {
+      showRouteResult(orig, dest, routeFeat.properties);
+    } else {
+      showSearchError(`No route data found for ${orig}–${dest}.`);
+    }
+    return;
+  }
+
+  // Only origin → fly to hub
+  if (orig) { enterHubState(findAirport(orig).properties); return; }
+  // Only destination → fly to hub
+  if (dest) { enterHubState(findAirport(dest).properties); return; }
+}
+
+// ── Boot ──────────────────────────────────────────────────────
+map.on('style.load', () => {
+  // Tint basemap to match site palette
+  map.getStyle().layers.forEach(layer => {
+    if (layer.type === 'background')
+      map.setPaintProperty(layer.id, 'background-color', '#FFFFFF');
+    if (layer.id.includes('water') && layer.type === 'fill')
+      try { map.setPaintProperty(layer.id, 'fill-color', '#F1F5F9'); } catch(_) {}
+    if ((layer.id.includes('admin') || layer.id.includes('boundary') || layer.id.includes('border')) && layer.type === 'line')
+      try { map.setPaintProperty(layer.id, 'line-color', '#E2E8F0'); } catch(_) {}
+  });
+  map.setPadding({ top: 115, right: 24, bottom: 24, left: 24 });
+  loadData();
+  initYearSlider();
+  map.on('move', _positionRouteCard);
+});
+
+(function() {
+  const card = document.getElementById('legend-card');
+  const handle = card.querySelector('.legend-toggle-row');
+  let pressed = false, dragging = false, lastX, lastY;
+
+  handle.addEventListener('pointerdown', e => {
+    if (!card.style.top) {
+      const r = card.getBoundingClientRect();
+      card.style.left = r.left + 'px'; card.style.top = r.top + 'px';
+      card.style.bottom = 'auto'; card.style.right = 'auto';
+    }
+    pressed = true; dragging = false;
+    lastX = e.clientX; lastY = e.clientY;
+    handle.setPointerCapture(e.pointerId);
+  });
+
+  handle.addEventListener('pointermove', e => {
+    if (!pressed) return;
+    const dx = e.clientX - lastX, dy = e.clientY - lastY;
+    if (!dragging && Math.hypot(dx, dy) < 6) return;
+    dragging = true;
+    handle.style.cursor = 'grabbing';
+    card.style.left = Math.max(0, Math.min(parseFloat(card.style.left) + dx, window.innerWidth  - card.offsetWidth))  + 'px';
+    card.style.top  = Math.max(0, Math.min(parseFloat(card.style.top)  + dy, window.innerHeight - card.offsetHeight)) + 'px';
+    lastX = e.clientX; lastY = e.clientY;
+  });
+
+  handle.addEventListener('pointerup', () => {
+    if (!dragging) card.classList.toggle('collapsed');
+    pressed = false; dragging = false;
+    handle.style.cursor = '';
+  });
+})();
+</script>
+<!-- Autocomplete dropdowns outside ctrl-row to avoid transform clipping -->
+<div class="ctrl-ac-dropdown" id="origin-dropdown" style="display:none"></div>
+<div class="ctrl-ac-dropdown" id="dest-dropdown" style="display:none"></div>
+</body>
+</html>
