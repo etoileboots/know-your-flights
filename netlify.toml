@@ -1,0 +1,3 @@
+[build]
+  command = "sed -i 's/__MAPBOX_TOKEN__/'\"$MAPBOX_TOKEN\"'/g' index.html"
+  publish = "."
