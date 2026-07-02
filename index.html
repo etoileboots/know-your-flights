@@ -161,7 +161,7 @@ html, body {
 }
 .ctrl-year-value {
   font-family: 'DM Mono', monospace; font-size: 11px; font-weight: 500;
-  color: var(--color-text-muted); flex-shrink: 0; min-width: 66px; text-align: right;
+  color: var(--color-text-muted); flex-shrink: 0; min-width: 120px; text-align: right;
 }
 
 /* ── Legend ───────────────────────────────────────────────── */
@@ -667,9 +667,8 @@ function initYearSlider() {
     fillEl.style.left  = leftPx + 'px';
     fillEl.style.width = (rightPx - leftPx) + 'px';
     const fmtYear = (y, isEnd) => {
-      if (y === 2026) return 'April 2026';
-      if (y === 2018 && !isEnd) return 'January 2018';
-      return String(y);
+      if (isEnd) return y === 2026 ? 'Apr 2026' : `Dec ${y}`;
+      return `Jan ${y}`;
     };
     labelEl.textContent = s === e ? String(s) : `${fmtYear(s, false)}–${fmtYear(e, true)}`;
     applyYearRange(s, e);
