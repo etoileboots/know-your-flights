@@ -50,7 +50,7 @@ DAYS = [1, 2, 3, 4, 5, 6, 7]  # BTS: 1=Mon … 7=Sun
 
 def write(path, data):
     with open(path, "w") as f:
-        json.dump(data, f, separators=(",", ":"))
+        json.dump(data, f, separators=(",", ":"), allow_nan=False)
     kb = os.path.getsize(path) / 1024
     print(f"  ✓ {os.path.basename(path)}  ({kb:.1f} KB)")
 

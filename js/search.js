@@ -375,9 +375,9 @@ function applyYearFilter() {
       : `${yearLabel} · limited data for this range`;
   }
 
-  const { accuracy, meanArr } = getYearRangeData(yMin, yMax);
+  const { accuracy, meanArr, meanDep } = getYearRangeData(yMin, yMax);
   if (accuracy) {
-    renderRouteKpi(accuracy, meanArr);
+    renderRouteKpi(accuracy, meanArr, meanDep);
     renderDivergingBar(accuracy);
   }
 
@@ -400,12 +400,15 @@ function applyYearFilter() {
 }
 
 // ── Route KPI strip ───────────────────────────────────────────
-function renderRouteKpi(accuracy, meanArrDelay) {
-  const avgEl = document.getElementById('kpi-avgdelay');
-  if (avgEl && meanArrDelay != null) {
-    avgEl.textContent = (meanArrDelay >= 0 ? '+' : '') + meanArrDelay.toFixed(1) + ' min';
-    avgEl.className = 'route-kpi-val ' + (meanArrDelay >= 15 ? 'bad' : meanArrDelay >= 5 ? 'warn' : '');
-  }
+function renderRouteKpi(accuracy, meanArrDelay, meanDepDelay) {
+  const fmtDelay = (val, el) => {
+    if (!el) return;
+    if (val == null) { el.textContent = '—'; el.className = 'route-kpi-val'; return; }
+    el.textContent = (val >= 0 ? '+' : '') + val.toFixed(1) + ' min';
+    el.className = 'route-kpi-val';
+  };
+  fmtDelay(meanDepDelay, document.getElementById('kpi-depdelay'));
+  fmtDelay(meanArrDelay, document.getElementById('kpi-arrdelay'));
 
   const hm = routeData?.heatmap;
   if (hm) {
@@ -444,11 +447,13 @@ function renderDivergingBar(accuracy) {
   function buildBar(id, seg) {
     const p = Math.round(seg.perfect), s = Math.round(seg.standard), d = Math.round(seg.disruptive);
     document.getElementById(id).innerHTML = [
-      [p, 'acc-seg acc-seg-perfect',    p >= 7 ? p + '%' : ''],
-      [s, 'acc-seg acc-seg-standard',   s >= 7 ? s + '%' : ''],
-      [d, 'acc-seg acc-seg-disruptive', d >= 7 ? d + '%' : ''],
-    ].map(([flex, cls, label]) =>
-      `<div class="${cls}" style="flex:${flex}">${label}</div>`
+      [p, 'acc-seg acc-seg-perfect'],
+      [s, 'acc-seg acc-seg-standard'],
+      [d, 'acc-seg acc-seg-disruptive'],
+    ].map(([flex, cls]) =>
+      `<div class="${cls}" style="flex:${flex}">` +
+      (flex > 0 ? `<span class="acc-seg-lbl ${flex < 10 ? 'acc-seg-lbl-below' : ''}">${flex}%</span>` : '') +
+      `</div>`
     ).join('');
   }
   buildBar('dep-bar', accuracy.dep);
@@ -937,14 +942,18 @@ function setMacroMode(mode) {
 
 function drawMacroChart(cIdx, annualOverride) {
   const annual = annualOverride ?? routeData?.annual;
+  const svg = document.getElementById('macro-svg');
   if (!annual) return;
   const baseline = annual.baseline;
-  if (!baseline || baseline.length < 2) return;
+  if (!baseline || baseline.length < 2) {
+    svg.innerHTML = '<text x="50%" y="50%" text-anchor="middle" dominant-baseline="middle" ' +
+      'font-size="13" fill="var(--color-text-faint)" font-family="\'Public Sans\',sans-serif">' +
+      'Not enough data to render this chart.</text>';
+    return;
+  }
 
   const isArr  = macroDelayMode !== 'dep';
   const valKey = isArr ? 'arr_delay' : 'dep_delay';
-
-  const svg = document.getElementById('macro-svg');
   const W = Math.max(320, svg.parentElement.clientWidth || 900);
   const H = Math.round(W * 0.265);
   svg.setAttribute('viewBox', `0 0 ${W} ${H}`);
@@ -1107,6 +1116,21 @@ function renderRibbon(carriers, selIdx) {
 // ── Master render ─────────────────────────────────────────────
 function renderAll() {
   if (!routeData) return;
+
+  const total = routeData.route?.total_flights ?? Infinity;
+  const isLowVolume = total < 1000;
+
+  const banner = document.getElementById('low-volume-banner');
+  if (banner) banner.style.display = isLowVolume ? 'flex' : 'none';
+
+  const dataSections = ['route-kpi', 'section-timeliness', 'section-polar', 'carrier-card', 'section-macro'];
+  dataSections.forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.style.display = isLowVolume ? 'none' : '';
+  });
+
+  if (isLowVolume) return;
+
   buildPolarChart(routeData.heatmap, routeData.arr_heatmap, routeData.monthly, routeData.arr_monthly);
   buildCarrierTable(routeData.carriers);
   selectedCarrier = null;
@@ -1163,8 +1187,9 @@ document.getElementById('kpi-cell-days').addEventListener('click', () =>
   document.getElementById('polar-main').scrollIntoView({ behavior: 'smooth', block: 'center' }));
 document.getElementById('kpi-cell-carrier').addEventListener('click', () =>
   document.getElementById('carrier-card').scrollIntoView({ behavior: 'smooth', block: 'start' }));
-document.getElementById('kpi-cell-avg').addEventListener('click', () =>
-  document.getElementById('macro-svg').scrollIntoView({ behavior: 'smooth', block: 'center' }));
+['kpi-cell-depdelay', 'kpi-cell-arrdelay'].forEach(id =>
+  document.getElementById(id)?.addEventListener('click', () =>
+    document.getElementById('macro-svg').scrollIntoView({ behavior: 'smooth', block: 'center' })));
 
 // ── Boot ──────────────────────────────────────────────────────
 if (routeFrom.length === 3 && routeTo.length === 3) {

@@ -166,7 +166,7 @@ html, body {
 
 /* ── Legend ───────────────────────────────────────────────── */
 .legend-card {
-  position: fixed; bottom: 80px; left: 20px; z-index: 200;
+  position: fixed; bottom: 24px; left: 20px; z-index: 200;
   background: var(--color-bg-card); border: 1px solid var(--color-border);
   border-radius: 8px; width: 200px;
   box-shadow: 0 2px 8px rgba(15,23,42,.08);
@@ -187,8 +187,8 @@ html, body {
 }
 .legend-card.collapsed .legend-toggle-icon { transform: rotate(180deg); }
 .legend-body {
-  padding: 0 14px 10px; overflow: hidden;
-  max-height: 200px; transition: max-height 0.2s ease, padding 0.2s ease;
+  padding: 0 14px 10px; overflow-y: auto;
+  max-height: 320px; transition: max-height 0.2s ease, padding 0.2s ease;
 }
 .legend-card.collapsed .legend-body { max-height: 0; padding-bottom: 0; }
 .legend-title {
@@ -214,6 +214,12 @@ html, body {
   background: #94A3B8; border-radius: 50%; flex-shrink: 0; opacity: 0.7;
 }
 .legend-size-label { font-size: 10px; color: var(--color-text-faint); }
+.legend-note { font-size: 10px; color: var(--color-text-faint); line-height: 1.5; }
+.legend-dash-solid, .legend-dash-dashed {
+  flex-shrink: 0; height: 2px; width: 22px; border-radius: 1px;
+}
+.legend-dash-solid { background: #94A3B8; }
+.legend-dash-dashed { background: repeating-linear-gradient(90deg, #94A3B8 0, #94A3B8 4px, transparent 4px, transparent 7px); }
 
 /* ── Right panel ──────────────────────────────────────────── */
 .right-panel {
@@ -224,6 +230,26 @@ html, body {
   z-index: 150; overflow: hidden;
 }
 .right-panel.open { transform: translateX(0); }
+
+/* ── Mobile ───────────────────────────────────────────────── */
+@media (max-width: 600px) {
+  .topbar { padding: 0 16px; }
+  .topbar-nav.topbar-nav-right { display: none; }
+
+  .ctrl-row {
+    left: 12px; right: 12px; transform: none;
+    width: auto; min-width: 0;
+  }
+
+  .right-panel {
+    width: 100%; top: auto; bottom: 0; max-height: 60vh;
+    border-left: none; border-top: 1px solid var(--color-border);
+    transform: translateY(100%);
+  }
+  .right-panel.open { transform: translateY(0); }
+
+  .legend-card { display: none; }
+}
 
 .panel-header {
   padding: 18px 20px 14px; border-bottom: 1px solid var(--color-border); flex-shrink: 0;
@@ -427,10 +453,10 @@ html, body {
     <a class="topbar-brand" href="story.html"><img src="img/kyf-logo.svg" alt="KYF" height="22" style="display:block"></a>
     <nav class="topbar-nav">
       <a href="search.html">Search Route</a>
-      <a href="index.html" class="active">Explore Data</a>
+      <a href="index.html" class="active">Explore Map</a>
     </nav>
   </div>
-  <nav class="topbar-nav">
+  <nav class="topbar-nav topbar-nav-right">
     <a href="story.html">About</a>
     <a href="methodology.html">Methodology</a>
     <a href="contact.html">Contact</a>
@@ -459,10 +485,10 @@ html, body {
     <div class="yr-slider-wrap">
       <div class="yr-slider-track"></div>
       <div class="yr-slider-fill" id="yr-fill" style="left:0%;width:100%"></div>
-      <input type="range" class="yr-range" id="yr-start" min="2018" max="2025" value="2018" step="1">
-      <input type="range" class="yr-range" id="yr-end"   min="2018" max="2025" value="2025" step="1">
+      <input type="range" class="yr-range" id="yr-start" min="2018" max="2026" value="2018" step="1">
+      <input type="range" class="yr-range" id="yr-end"   min="2018" max="2026" value="2026" step="1">
     </div>
-    <span class="ctrl-year-value" id="yr-label">2018–2025</span>
+    <span class="ctrl-year-value" id="yr-label">2018–2026</span>
   </div>
 </div>
 
@@ -489,6 +515,16 @@ html, body {
     <div class="legend-size-row">
       <span class="legend-bubble" style="width:22px;height:22px"></span>
       <span class="legend-size-label">&gt; 100k</span>
+    </div>
+    <div class="legend-sep"></div>
+    <div class="legend-title">Route Traffic</div>
+    <div class="legend-size-row">
+      <span class="legend-dash-solid"></span>
+      <span class="legend-size-label">Regular service</span>
+    </div>
+    <div class="legend-size-row">
+      <span class="legend-dash-dashed"></span>
+      <span class="legend-size-label">&lt; 1k flights — limited data</span>
     </div>
   </div>
 </div>
@@ -588,6 +624,7 @@ function delayClass(pct) {
 }
 function fmtFlights(n) {
   if (n >= 1000000) return (n/1000000).toFixed(1)+'M';
+  if (n < 1000) return '< 1k';
   return Math.round(n/1000)+'k';
 }
 const COLOR_EXPR = ['interpolate',['linear'],['get','pct_delayed'],
@@ -600,10 +637,16 @@ function makeRadiusExpr(fltProp = 'flights') {
     100000, 11 // > 100k/year → large
   ];
 }
+function makeOpacityExpr(fltProp = 'flights', normal = 0.9) {
+  return ['step', ['coalesce', ['get', fltProp], ['get', 'flights']],
+    0.3,       // < 1k total flights → dim
+    1000, normal
+  ];
+}
 const RADIUS_EXPR = makeRadiusExpr('flights');
 
 // ── Year slider ──────────────────────────────────────────────
-let yearMin = 2018, yearMax = 2025;
+let yearMin = 2018, yearMax = 2026;
 
 function initYearSlider() {
   const startEl = document.getElementById('yr-start');
@@ -615,7 +658,7 @@ function initYearSlider() {
     let s = parseInt(startEl.value), e = parseInt(endEl.value);
     if (s > e) [s, e] = [e, s];
     yearMin = s; yearMax = e;
-    const span    = 2025 - 2018;
+    const span    = 2026 - 2018;
     const thumbPx = 13;
     const W       = startEl.offsetWidth || startEl.getBoundingClientRect().width;
     const track   = W - thumbPx;
@@ -623,12 +666,18 @@ function initYearSlider() {
     const rightPx = (e - 2018) / span * track + thumbPx / 2;
     fillEl.style.left  = leftPx + 'px';
     fillEl.style.width = (rightPx - leftPx) + 'px';
-    labelEl.textContent = s === e ? String(s) : `${s}–${e}`;
+    const fmtYear = (y, isEnd) => {
+      if (y === 2026) return 'April 2026';
+      if (y === 2018 && !isEnd) return 'January 2018';
+      return String(y);
+    };
+    labelEl.textContent = s === e ? String(s) : `${fmtYear(s, false)}–${fmtYear(e, true)}`;
     applyYearRange(s, e);
   }
 
   startEl.addEventListener('input', update);
   endEl.addEventListener('input', update);
+  requestAnimationFrame(update);
 }
 
 function applyYearRange(s, e) {
@@ -793,26 +842,27 @@ function addLayers() {
     }
   });
 
-  // Hub routes (gray, shown in hub state)
+  // Hub routes (gray, shown in hub state) — solid for ≥1k flights
   map.addLayer({
     id: 'hub-routes-line', type: 'line', source: 'hub-routes',
+    filter: ['>=', ['get', 'flights_per_year'], 1000],
     layout: { 'line-cap': 'round', 'line-join': 'round' },
-    paint: {
-      'line-color': '#94A3B8',
-      'line-width': 1.5,
-      'line-opacity': 0.6,
-    }
+    paint: { 'line-color': '#94A3B8', 'line-width': 1.5, 'line-opacity': 0.6 }
   });
 
-  // Hub routes hover (amber)
+  // Hub routes — dashed for <1k flights (low traffic, less reliable data)
+  map.addLayer({
+    id: 'hub-routes-line-low', type: 'line', source: 'hub-routes',
+    filter: ['<', ['get', 'flights_per_year'], 1000],
+    layout: { 'line-cap': 'butt', 'line-join': 'round' },
+    paint: { 'line-color': '#94A3B8', 'line-width': 1.5, 'line-dasharray': [3, 3], 'line-opacity': 0.45 }
+  });
+
+  // Hub routes hover (amber) — single solid layer for all routes
   map.addLayer({
     id: 'hub-routes-hover', type: 'line', source: 'hub-routes',
     layout: { 'line-cap': 'round', 'line-join': 'round' },
-    paint: {
-      'line-color': '#F59E0B',
-      'line-width': 2.5,
-      'line-opacity': 0,
-    }
+    paint: { 'line-color': '#F59E0B', 'line-width': 2.5, 'line-opacity': 0 }
   });
 
   // Airport circles — filled, colored by delay rate, sized by flight volume
@@ -870,14 +920,25 @@ function enterHubState(airportProps) {
   map.setPaintProperty('airports-circle', 'circle-stroke-opacity',
     ['case', ['==', ['get','code'], airportProps.code], 0, 0.3]);
 
-  // Load hub routes
-  const hubRoutes = routesData.features.filter(f =>
-    f.properties.origin === airportProps.code || f.properties.dest === airportProps.code
-  );
+  // Load hub routes — compute per-year average (routes.geojson stores total flights)
+  const YEARS_LIST = [2018,2019,2020,2021,2022,2023,2024,2025,2026];
+  const hubRoutes = routesData.features
+    .filter(f => f.properties.origin === airportProps.code || f.properties.dest === airportProps.code)
+    .map(f => {
+      const p = f.properties;
+      const active = YEARS_LIST.map(y => p[`flt_${y}`]).filter(v => v != null && v > 0);
+      const flights_per_year = active.length
+        ? Math.round(active.reduce((a, b) => a + b, 0) / active.length)
+        : p.flights;
+      return { ...f, properties: { ...p, flights_per_year } };
+    });
   map.getSource('hub-routes').setData({ type: 'FeatureCollection', features: hubRoutes });
 
   // Show panel
-  openPanel(airportProps, hubRoutes.map(f => f.properties));
+  const panelRoutes = hubRoutes
+    .map(f => f.properties)
+    .filter(r => r.origin === airportProps.code);
+  openPanel(airportProps, panelRoutes);
 
   // Show back button
   document.getElementById('back-btn').classList.add('visible');
@@ -993,7 +1054,7 @@ function showTooltip(props, x, y) {
   const flt  = totalFlt > 0 ? Math.round(totalFlt / (yearMax - yearMin + 1)) : Math.round(props.flights / 8);
   const dcls = delayClass(pct);
   document.getElementById('tt-route').textContent   = props.origin + ' → ' + props.dest;
-  document.getElementById('tt-delay').textContent   = '+' + mean.toFixed(1) + ' min';
+  document.getElementById('tt-delay').textContent   = (mean >= 0 ? '+' : '') + mean.toFixed(1) + ' min';
   document.getElementById('tt-delay').className     = 'tt-val ' + dcls;
   document.getElementById('tt-pct').textContent     = pct.toFixed(1) + '%';
   document.getElementById('tt-pct').className       = 'tt-val ' + dcls;
@@ -1034,27 +1095,26 @@ function bindEvents() {
   });
 
   // Hover route (hub state)
-  map.on('mousemove', 'hub-routes-line', e => {
-    const p = e.features[0].properties;
-    map.setPaintProperty('hub-routes-hover', 'line-opacity',
-      ['case',
-        ['all',['==',['get','origin'],p.origin],['==',['get','dest'],p.dest]], 0.9,
-        0]);
-    map.getCanvas().style.cursor = 'pointer';
-    showTooltip(p, e.originalEvent.clientX, e.originalEvent.clientY);
-  });
+  ['hub-routes-line', 'hub-routes-line-low'].forEach(layer => {
+    map.on('mousemove', layer, e => {
+      const p = e.features[0].properties;
+      const matchExpr = ['case', ['all',['==',['get','origin'],p.origin],['==',['get','dest'],p.dest]], 0.9, 0];
+      map.setPaintProperty('hub-routes-hover', 'line-opacity', matchExpr);
+      map.getCanvas().style.cursor = 'pointer';
+      showTooltip(p, e.originalEvent.clientX, e.originalEvent.clientY);
+    });
 
-  map.on('mouseleave', 'hub-routes-line', () => {
-    map.setPaintProperty('hub-routes-hover', 'line-opacity', 0);
-    map.getCanvas().style.cursor = '';
-    setTimeout(() => { if (!tooltipHovered) hideTooltip(); }, 80);
-  });
+    map.on('mouseleave', layer, () => {
+      map.setPaintProperty('hub-routes-hover', 'line-opacity', 0);
+      map.getCanvas().style.cursor = '';
+      setTimeout(() => { if (!tooltipHovered) hideTooltip(); }, 80);
+    });
 
-  // Click route arc → navigate to report
-  map.on('click', 'hub-routes-line', e => {
-    const p = e.features[0].properties;
-    e.originalEvent.stopPropagation();
-    window.location.href = `search.html?from=${p.origin}&to=${p.dest}`;
+    map.on('click', layer, e => {
+      const p = e.features[0].properties;
+      e.originalEvent.stopPropagation();
+      window.location.href = `search.html?from=${p.origin}&to=${p.dest}`;
+    });
   });
 
   // Cursor on airports
@@ -1063,7 +1123,7 @@ function bindEvents() {
 
   // Click blank → exit hub
   map.on('click', e => {
-    const feats = map.queryRenderedFeatures(e.point, { layers: ['airports-circle','airports-selected','hub-routes-line'] });
+    const feats = map.queryRenderedFeatures(e.point, { layers: ['airports-circle','airports-selected','hub-routes-line','hub-routes-line-low'] });
     if (!feats.length && appState === 'hub') exitHubState();
   });
 }
@@ -1194,7 +1254,7 @@ function showRouteResult(orig, dest, routeProps) {
   const totalFlights = routeProps.flights ?? null;
   document.getElementById('rrc-metrics').innerHTML = `
     <div class="rrc-metric">
-      <div class="rrc-metric-val ${dcls}">+${parseFloat(routeProps.mean_delay).toFixed(0)} min</div>
+      <div class="rrc-metric-val ${dcls}">${parseFloat(routeProps.mean_delay) >= 0 ? '+' : ''}${parseFloat(routeProps.mean_delay).toFixed(0)} min</div>
       <div class="rrc-metric-label">Avg dep delay</div>
     </div>
     <div class="rrc-metric">

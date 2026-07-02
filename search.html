@@ -18,7 +18,7 @@
     </a>
     <div class="nav-links">
       <a class="active" href="search.html">Search Route</a>
-      <a href="index.html">Explore Data</a>
+      <a href="index.html">Explore Map</a>
     </div>
   </div>
   <div class="nav-links">
@@ -66,11 +66,22 @@
 
   <div id="blank-prompt" style="display:none;text-align:center;padding:60px 24px 40px;color:var(--color-text-muted)">
     <div style="font-size:36px;margin-bottom:14px;opacity:0.25">✈</div>
-    <div style="font-size:16px;font-weight:600;color:var(--color-text-main);margin-bottom:6px">Enter a route to see its history</div>
-
+    <div style="font-size:16px;font-weight:600;color:var(--color-text-main);margin-bottom:8px">Enter a route to see its history</div>
+    <div style="font-size:13px;color:var(--color-text-faint);line-height:1.8">
+      Search by city name or airport code &nbsp;·&nbsp; e.g. <strong style="color:var(--color-text-muted)">New York</strong> or <strong style="color:var(--color-text-muted)">JFK</strong>
+    </div>
   </div>
 
   <p class="route-scope" id="route-scope">BTS On-Time Data · 2018–2025 · Loading…</p>
+
+  <div class="low-volume-banner" id="low-volume-banner" style="display:none">
+    <span class="low-volume-banner-icon">⚠</span>
+    <div>
+      <strong>Not enough data to analyze this route.</strong>
+      Fewer than 1,000 flights were recorded on this route in the BTS dataset — too few to produce reliable statistics.
+    </div>
+  </div>
+
   <p class="route-legal" id="route-legal">Historical archive context only. Past performance does not guarantee future airline schedules, airport capacities, or weather events.</p>
 
   <div class="route-kpi" id="route-kpi">
@@ -84,9 +95,14 @@
       <div class="route-kpi-val route-kpi-val--name" id="kpi-carrier-diff">—</div>
       <div class="route-kpi-hint" id="kpi-carrier-hint"></div>
     </div>
-    <div class="route-kpi-cell" id="kpi-cell-avg">
-      <div class="route-kpi-label">Average arrival delay</div>
-      <div class="route-kpi-val" id="kpi-avgdelay">—</div>
+    <div class="route-kpi-cell" id="kpi-cell-depdelay">
+      <div class="route-kpi-label">Avg departure delay</div>
+      <div class="route-kpi-val" id="kpi-depdelay">—</div>
+      <div class="route-kpi-hint">All flights including on-time</div>
+    </div>
+    <div class="route-kpi-cell" id="kpi-cell-arrdelay">
+      <div class="route-kpi-label">Avg arrival delay</div>
+      <div class="route-kpi-val" id="kpi-arrdelay">—</div>
       <div class="route-kpi-hint">All flights including on-time</div>
     </div>
   </div>
@@ -94,7 +110,7 @@
 </section>
 
 <!-- ══ TIER 2: Accuracy Funnel ═══════════════════════════════ -->
-<section class="section">
+<section class="section" id="section-timeliness">
   <div class="section-title" id="acc-tier-title">Flight Timeliness</div>
   <div class="section-sub" id="acc-tier-sub">All carriers combined</div>
   <div class="acc-layout">
@@ -118,7 +134,7 @@
 </section>
 
 <!-- ══ TIER 3: Polar Delay Chart ══════════════════════════════ -->
-<section class="section">
+<section class="section" id="section-polar">
   <div class="section-title">Time-Dependent Flight Delay Variation</div>
   <div class="section-sub">View monthly and weekly average percentages of flights delayed over 15 minutes by hovering. Select a month to view more granular details.</div>
   <div class="polar-toggle" style="margin-bottom:16px">
@@ -178,7 +194,7 @@
 </section>
 
 <!-- ══ TIER 5: Year-by-Year Macro Chart ══════════════════════ -->
-<section class="section">
+<section class="section" id="section-macro">
   <div class="section-title">Delays over the Years</div>
   <div class="section-sub" id="tier5-sub">Average departure delay in minutes</div>
   <div class="polar-toggle" style="margin-bottom:16px">

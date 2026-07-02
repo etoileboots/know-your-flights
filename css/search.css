@@ -88,7 +88,7 @@ main { max-width: var(--col); margin: 0 auto; padding: 32px 24px 80px; }
   padding: 2px 4px; border-radius: 4px; transition: background var(--t);
 }
 .route-code-input:focus { background: #fff; }
-.route-code-input::placeholder { color: var(--color-text-faint); font-size: 16px; }
+.route-code-input::placeholder { color: var(--color-text-faint); font-size: 16px; text-transform: none; }
 .route-code-input.input-error { background: #FEE2E2; color: #991B1B; }
 .input-error-msg {
   position: absolute; top: 100%; left: 0; margin-top: 4px;
@@ -136,6 +136,16 @@ main { max-width: var(--col); margin: 0 auto; padding: 32px 24px 80px; }
 }
 .route-scope { font-size: 12px; color: var(--color-text-faint); margin-bottom: 3px; letter-spacing: 0.01em; }
 .route-legal { font-size: 11px; color: var(--color-text-faint); margin-bottom: 0; font-style: italic; line-height: 18px; }
+
+.low-volume-banner {
+  display: flex; align-items: flex-start; gap: 10px;
+  margin: 10px 0 6px;
+  padding: 10px 14px;
+  background: #FEF3C7; border: 1px solid #F59E0B; border-radius: 6px;
+  font-size: 12px; color: #92400E; line-height: 1.5;
+}
+.low-volume-banner strong { color: #78350F; }
+.low-volume-banner-icon { font-size: 15px; flex-shrink: 0; margin-top: 1px; }
 
 /* ── KPI stats — editorial inline, not tiles ─────────────── */
 .route-kpi {
@@ -199,22 +209,40 @@ input.yr-range::-moz-range-thumb { width: 12px; height: 12px; border-radius: 50%
 .acc-layout {
   display: grid; grid-template-columns: 1fr auto; gap: 32px; align-items: center;
 }
-.acc-bars { display: flex; flex-direction: column; gap: 12px; }
-.acc-row { display: flex; align-items: stretch; height: 40px; }
+.acc-bars { display: flex; flex-direction: column; gap: 0; }
+.acc-row { display: flex; align-items: stretch; height: 40px; margin-bottom: 36px; }
 .acc-row-label {
   font-size: 10px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase;
   color: var(--color-text-faint); width: 88px; flex-shrink: 0;
   display: flex; align-items: center;
 }
-.acc-bar { flex: 1; display: flex; border-radius: 3px; overflow: hidden; min-width: 0; }
+.acc-bar { flex: 1; display: flex; border-radius: 3px; overflow: visible; min-width: 0; }
 .acc-seg {
   display: flex; align-items: center; justify-content: center;
-  font-size: 12px; font-weight: 700; overflow: hidden; min-width: 0;
+  font-size: 12px; font-weight: 700; min-width: 0; position: relative;
   transition: flex 0.3s ease;
 }
+.acc-seg:first-child { border-radius: 3px 0 0 3px; }
+.acc-seg:last-child  { border-radius: 0 3px 3px 0; }
 .acc-seg-perfect    { background: #E2E8F0; color: #64748B; }
 .acc-seg-standard   { background: #FEF3C7; color: #92400E; }
 .acc-seg-disruptive { background: #EF4444; color: #fff; }
+.acc-seg-lbl { font-size: 11px; font-weight: 700; pointer-events: none; white-space: nowrap; }
+.acc-seg-lbl-below {
+  position: absolute; top: calc(100% + 10px); left: 50%; transform: translateX(-50%);
+  color: var(--color-text-muted); line-height: 1;
+}
+.acc-seg-lbl-below::before {
+  content: '';
+  position: absolute; bottom: calc(100% + 2px); left: 50%; transform: translateX(-50%);
+  width: 1px; height: 8px; background: var(--color-text-faint);
+}
+.acc-seg-lbl-below::after {
+  content: '';
+  position: absolute; bottom: calc(100% + 1px); left: 50%; transform: translateX(-50%);
+  border-left: 3px solid transparent; border-right: 3px solid transparent;
+  border-bottom: 4px solid var(--color-text-faint);
+}
 .acc-legend { display: flex; flex-direction: column; gap: 8px; }
 .acc-legend-item { display: flex; align-items: center; gap: 8px; font-size: 12px; color: var(--color-text-muted); white-space: nowrap; }
 .acc-legend-swatch { width: 10px; height: 10px; border-radius: 2px; flex-shrink: 0; }
