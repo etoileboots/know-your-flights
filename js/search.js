@@ -839,6 +839,24 @@ function buildPolarChart(depHeatmap, arrHeatmap, depMonthly, arrMonthly) {
   render(-1, -1);
   clearInfo();
 
+  // Pre-lock a month/day from ?chartMonth=MAY&chartDay=FRI (e.g. portfolio embeds)
+  const chartParams = new URLSearchParams(location.search);
+  const presetMonth = (chartParams.get('chartMonth') || '').slice(0, 3).toUpperCase();
+  const presetDay    = (chartParams.get('chartDay')   || '').slice(0, 3).toUpperCase();
+  const presetMIdx = MONTHS.indexOf(presetMonth);
+  const presetDIdx = DOW_NAMES.indexOf(presetDay);
+  if (presetMIdx >= 0) {
+    lockedMonth = presetMIdx;
+    if (presetDIdx >= 0) {
+      lockedDay = presetDIdx;
+      render(lockedMonth, lockedDay);
+      showDayInfo(lockedMonth, lockedDay, true);
+    } else {
+      render(lockedMonth, -1);
+      showMonthInfo(lockedMonth, true);
+    }
+  }
+
   const noteEl = document.getElementById('polar-data-note');
   if (noteEl) {
     const yMin = selectedYearMin, yMax = selectedYearMax;
