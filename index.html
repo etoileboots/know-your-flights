@@ -730,6 +730,20 @@ async function loadData() {
   addLayers();
   bindEvents();
   applyYearRange(yearMin, yearMax);
+  applyUrlRouteParams();
+}
+
+// Pre-fill and run a route search from ?origin=XXX&dest=YYY in the URL
+function applyUrlRouteParams() {
+  const params = new URLSearchParams(location.search);
+  const origin = params.get('origin');
+  const dest   = params.get('dest');
+  if (!origin && !dest) return;
+  const originInput = document.getElementById('origin-input');
+  const destInput    = document.getElementById('dest-input');
+  if (origin) originInput.value = origin.toUpperCase();
+  if (dest)   destInput.value   = dest.toUpperCase();
+  commitSearch();
 }
 
 // ── Mock data ─────────────────────────────────────────────────
